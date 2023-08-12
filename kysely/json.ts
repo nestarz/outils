@@ -1,5 +1,5 @@
-import type { Expression, RawBuilder, Simplify } from "https​://esm.sh/kysely​@0.26.1?dts";
-import { sql } from "https​://esm.sh/kysely​@0.26.1?dts";
+import type { Expression, RawBuilder, Simplify } from "https://esm.sh/kysely@0.26.1?dts";
+import { sql } from "https://esm.sh/kysely@0.26.1?dts";
 
 export const jsonObjectFrom = <O>(
   expr: Expression<O>
