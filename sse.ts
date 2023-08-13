@@ -22,7 +22,8 @@ export const sse =
           ((msg: string) => new TextEncoder().encode(`data: ${msg}\r\n\r\n`));
         const dispatch = (msg: string) => controller.enqueue(encode(msg));
         const sse = { dispatch, controller, readableStream: this as ReadableStream };
-        fn(req, { ...ctx, sse });
+        await fn(req, { ...ctx, sse });
+        controller.close();
       },
     });
     return new Response(readableStream, {
