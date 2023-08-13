@@ -20,7 +20,6 @@ export const sse =
         const encode =
           options?.encode ??
           ((msg: string) => new TextEncoder().encode(`data: ${msg}\r\n\r\n`));
-        controller.enqueue(encode("open"));
         const dispatch = (msg: string) => controller.enqueue(encode(msg));
         const sse = { dispatch, controller, readableStream };
         fn(req, { ...ctx, sse });
