@@ -43,3 +43,5 @@ export const createHandleRequestWithRouteConfiguration =
       (req.method === "GET" ? render?.() : new Response(null, { status: 404 }))
     );
   };
+
+export default createHandleRequestWithRouteConfiguration;
