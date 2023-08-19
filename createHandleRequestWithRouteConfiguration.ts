@@ -1,9 +1,26 @@
-import type { HandlerContext } from "https://deno.land/x/fresh@1.4.2/server.ts";
+import type {
+  HandlerContext,
+  Handlers,
+} from "https://deno.land/x/fresh@1.4.2/server.ts";
+import { pipe } from "./pipe.ts";
+
+type PipelineFunction<In, Out> = (arg: In) => Out | Promise<Out>;
+type ReturnTypeOf<F> = F extends (...args: any[]) => infer R ? R : never;
 
 export const createHandleRequestWithRouteConfiguration =
-  (...pipeFns: ((vnode: VNode) => ReadableStream)[]) =>
+  <
+    First extends <T>(vnode: T) => any | Promise<any>,
+    Middle extends PipelineFunction<any, any>[],
+    Last extends PipelineFunction<
+      any,
+      BodyInit | null | Promise<BodyInit | null>
+    >
+  >(
+    firstFn: First,
+    ...fns: [...Middle, Last]
+  ) =>
   (route: {
-    default: ((props: Record<string, unknown>) => VNode) | Handlers["GET"];
+    default: (<T>(props: Record<string, unknown>) => T) | Handlers["GET"];
     handler: Handlers;
   }) =>
   (req: Request, ctx: HandlerContext, matcher?: Record<string, string>) => {
@@ -15,8 +32,9 @@ export const createHandleRequestWithRouteConfiguration =
           (data: unknown) =>
             route.handler?.GET ? [{ ...props, data }] : [req, newCtx],
           ([p1, p2]) => route.default?.(p1, p2),
-          ...pipeFns,
-          (body: ReadableStream | string) =>
+          firstFn,
+          ...fns,
+          (body: BodyInit | null) =>
             new Response(body, { headers: { "content-type": "text/html" } })
         )
       : undefined;
@@ -25,5 +43,3 @@ export const createHandleRequestWithRouteConfiguration =
       (req.method === "GET" ? render?.() : new Response(null, { status: 404 }))
     );
   };
-
-export default createHandleRequestWithRouteConfiguration;
