@@ -1,7 +1,7 @@
 import type { HandlerContext } from "https://deno.land/x/fresh@1.4.2/server.ts";
 
 export const createHandleRequestWithRouteConfiguration =
-  (pipeFns: ((vnode: VNode) => ReadableStream)[] = []) =>
+  (...pipeFns: ((vnode: VNode) => ReadableStream)[]) =>
   (route: {
     default: ((props: Record<string, unknown>) => VNode) | Handlers["GET"];
     handler: Handlers;
