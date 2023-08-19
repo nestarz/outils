@@ -7,7 +7,7 @@ import { pipe } from "./pipe.ts";
 type PipelineFunction<In, Out> = (arg: In) => Out | Promise<Out>;
 type ReturnTypeOf<F> = F extends (...args: any[]) => infer R ? R : never;
 
-export const createHandleRequestWithRouteConfiguration =
+export const createRenderPipe =
   <
     First extends <T>(vnode: T) => any | Promise<any>,
     Middle extends PipelineFunction<any, any>[],
@@ -44,4 +44,4 @@ export const createHandleRequestWithRouteConfiguration =
     );
   };
 
-export default createHandleRequestWithRouteConfiguration;
+export default createRenderPipe;
