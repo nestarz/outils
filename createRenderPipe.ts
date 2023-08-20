@@ -35,7 +35,7 @@ export const createRenderPipe =
           firstFn,
           ...fns,
           (body: BodyInit | null) =>
-            new Response(body, { headers: { "content-type": "text/html" } })
+            new Response(body, { headers: { "content-type": "text/html; charset=utf-8" } })
         )
       : undefined;
     return (
