@@ -22,6 +22,7 @@ export const createRenderPipe =
   (route: {
     default: (<T>(props: Record<string, unknown>) => T) | Handlers["GET"];
     handler: Handlers;
+    config?: { routeOverride?: string };
   }) =>
   (req: Request, ctx: HandlerContext, matcher?: Record<string, string>) => {
     const url = new URL(req.url);
