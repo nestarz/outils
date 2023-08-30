@@ -29,11 +29,11 @@ const createCache = () => {
 };
 
 export const createGetSchemaFromUrl = (
-  graphqlClient: (...args: any[]) => Promise<Response>
+  graphqlClient: (arg: { query: string }) => Promise<Response>
 ) => {
   return async () => {
     console.time("[introspection]");
-    const response = await graphqlClient(getIntrospectionQuery());
+    const response = await graphqlClient({ query: getIntrospectionQuery() });
     const { data } = await response.json();
     const graphqlSchemaObj = buildClientSchema(data);
     console.timeEnd("[introspection]");
@@ -91,10 +91,11 @@ export const createSaveDefToFile = (
   };
 };
 
-export const createTypes = (fetcher: (...args: any[]) => Promise<Response>) => () =>
-  createSaveDefToFile(
-    createGetTypeScriptDef(createGetSchemaFromUrl(fetcher))
-  )().catch(console.error);
+export const createTypes =
+  (fetcher: (options: { query: string }) => Promise<Response>) => () =>
+    createSaveDefToFile(
+      createGetTypeScriptDef(createGetSchemaFromUrl(fetcher))
+    )().catch(console.error);
 
 export const createTypeDefsGen = (
   fetcher: (options: { query: string }) => Promise<Response>
