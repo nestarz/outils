@@ -95,3 +95,12 @@ export const createTypes = (fetcher: (...args: any[]) => Promise<Response>) => (
   createSaveDefToFile(
     createGetTypeScriptDef(createGetSchemaFromUrl(fetcher))
   )().catch(console.error);
+
+export const createTypeDefsGen = (
+  fetcher: (options: { query: string }) => Promise<Response>
+) => ({
+  saveTypeDefs: createSaveDefToFile(
+    createGetTypeScriptDef(createGetSchemaFromUrl(fetcher))
+  ),
+  getTypeDefs: createGetTypeScriptDef(createGetSchemaFromUrl(fetcher)),
+});
