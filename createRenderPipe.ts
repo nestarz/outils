@@ -5,7 +5,6 @@ import type {
 import { pipe } from "./pipe.ts";
 
 type PipelineFunction<In, Out> = (arg: In) => Out | Promise<Out>;
-type ReturnTypeOf<F> = F extends (...args: any[]) => infer R ? R : never;
 
 export const createRenderPipe =
   <
@@ -19,11 +18,14 @@ export const createRenderPipe =
     firstFn: First,
     ...fns: [...Middle, Last]
   ) =>
-  (route: {
-    default: (<T>(props: Record<string, unknown>) => T) | Handlers["GET"];
-    handler: Handlers;
-    config?: { routeOverride?: string };
-  }) =>
+  (
+    route: {
+      default: (<T>(props: Record<string, unknown>) => T) | Handlers["GET"];
+      handler: Handlers;
+      config?: { routeOverride?: string };
+    },
+    config?: { responseInit?: ResponseInit }
+  ) =>
   (req: Request, ctx: HandlerContext, matcher?: Record<string, string>) => {
     const url = new URL(req.url);
     const newCtx = matcher ? { ...ctx, params: matcher, url } : { ...ctx, url };
@@ -36,7 +38,10 @@ export const createRenderPipe =
           firstFn,
           ...fns,
           (body: BodyInit | null) =>
-            new Response(body, { headers: { "content-type": "text/html; charset=utf-8" } })
+            new Response(body, {
+              headers: { "content-type": "text/html; charset=utf-8" },
+              ...(config?.responseInit ?? {}),
+            })
         )
       : undefined;
     return (
