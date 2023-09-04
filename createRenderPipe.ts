@@ -1,3 +1,4 @@
+import type { defineLayout } from "$fresh/src/server/defines.ts";
 import type {
   HandlerContext,
   Handlers,
@@ -24,24 +25,40 @@ export const createRenderPipe =
       handler: Handlers;
       config?: { routeOverride?: string };
     },
-    config?: { responseInit?: ResponseInit }
+    config?: {
+      responseInit?: ResponseInit;
+      Layout?: { default: ReturnType<typeof defineLayout> };
+    }
   ) =>
   (req: Request, ctx: HandlerContext, matcher?: Record<string, string>) => {
     const url = new URL(req.url);
     const newCtx = matcher ? { ...ctx, params: matcher, url } : { ...ctx, url };
     const props = { url, ctx: newCtx };
+
+    const vNodePipe = pipe(
+      firstFn,
+      ...fns as any[],
+      (result: Response | BodyInit | null) =>
+        result instanceof Response
+          ? result
+          : new Response(result, {
+              headers: {
+                "content-type": "text/html; charset=utf-8",
+              },
+              ...(config?.responseInit ?? {}),
+            })
+    );
+
     const render = route.default
       ? pipe(
           (data: unknown) =>
             route.handler?.GET ? [{ ...props, data }] : [req, newCtx],
           ([p1, p2]) => route.default?.(p1, p2),
-          firstFn,
-          ...fns,
-          (body: BodyInit | null) =>
-            new Response(body, {
-              headers: { "content-type": "text/html; charset=utf-8" },
-              ...(config?.responseInit ?? {}),
-            })
+          (node) => [node, { ...newCtx, Component: () => node }],
+          ([node, ctx]) =>
+            node instanceof Response
+              ? node
+              : vNodePipe(config?.Layout?.default(req, ctx) ?? node)
         )
       : undefined;
     return (
