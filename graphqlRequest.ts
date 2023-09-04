@@ -1,3 +1,11 @@
+export type ExactStructure<T, U> = T & {
+  [K in keyof T]: K extends keyof U
+    ? T[K] extends Record<string, unknown> | undefined
+      ? ExactStructure<NonNullable<T[K]>, NonNullable<U[K]>>
+      : T[K]
+    : never;
+};
+
 export type RemoveNodesAndEdges<T> = {
   [K in keyof T]: T[K] extends { nodes: infer U }[] // If T[K] is an array with elements of type { nodes: U }
     ? U[] // Replace T[K] with U[]
@@ -14,6 +22,12 @@ export type GraphQLClientRequestHeaders =
   | Headers
   | string[][]
   | Record<string, string>;
+
+export const gql = (l: any, ...o: any[]): string => {
+  let t = l[0];
+  for (let e = 1, r = l.length; e < r; e++) (t += o[e - 1]), (t += l[e]);
+  return t;
+};
 
 export const request = (
   url: string,
