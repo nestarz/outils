@@ -1,8 +1,8 @@
 import type {
   QueryParameterSet,
   RowObject,
-} from "https://deno.land/x/sqlite@v3.7.3/mod.ts";
-import { DB } from "https://deno.land/x/sqlite@v3.7.3/mod.ts";
+} from "https://deno.land/x/sqlite@v3.8.0/mod.ts";
+import { DB } from "https://deno.land/x/sqlite@v3.8.0/mod.ts";
 
 export interface DBWithHash {
   _db: DB | null;
@@ -13,7 +13,6 @@ export interface DBWithHash {
   ) => Promise<RowObject[] | undefined>;
 }
 
-let db0: DB;
 const strPrefix = (v) => `[s3lite] ${v}`;
 
 export default async (
@@ -21,6 +20,7 @@ export default async (
   set: (buffer: Uint8Array) => boolean | Promise<boolean>,
   gethash?: () => Promise<string | null | undefined>,
 ): Promise<DBWithHash> => {
+  let db0: DB;
   const get = async () => {
     const buffer = await get_().catch(() => null);
     if (db0) {
