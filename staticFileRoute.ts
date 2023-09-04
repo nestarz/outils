@@ -6,11 +6,7 @@ export const config: RouteConfig = {
 };
 
 export const createHandler =
-  (options: {
-    baseUrl: string;
-    headers?: HeadersInit;
-    prefix?: string;
-  }) =>
+  (options: { baseUrl: string; headers?: HeadersInit; prefix?: string }) =>
   async (req: Request) => {
     const url = new URL(
       "." +
@@ -19,9 +15,9 @@ export const createHandler =
         ),
       options.baseUrl
     );
-    const resp = await fetch(url);
+    const resp = await fetch(url).catch(() => null);
     const size = resp?.headers.get("content-length");
-    return resp.status === 200
+    return resp?.status === 200
       ? new Response(resp.body, {
           headers: {
             "content-type": lookup(url.href)!,
