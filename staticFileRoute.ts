@@ -6,10 +6,17 @@ export const config: RouteConfig = {
 };
 
 export const createHandler =
-  (options: { baseUrl: string; headers?: Record<string, string> }) =>
+  (options: {
+    baseUrl: string;
+    headers?: HeadersInit;
+    prefix?: string;
+  }) =>
   async (req: Request) => {
     const url = new URL(
-      "." + decodeURIComponent(new URL(req.url).pathname),
+      "." +
+        decodeURIComponent(new URL(req.url).pathname).slice(
+          options.prefix?.length
+        ),
       options.baseUrl
     );
     const resp = await fetch(url);
@@ -17,7 +24,7 @@ export const createHandler =
     return resp.status === 200
       ? new Response(resp.body, {
           headers: {
-            "content-type": lookup(url.href),
+            "content-type": lookup(url.href)!,
             ...(size ? { "content-length": String(size) } : {}),
             "Access-Control-Allow-Credentials": "true",
             "Access-Control-Allow-Origin": "*",
