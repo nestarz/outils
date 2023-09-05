@@ -9,16 +9,16 @@ export interface DBWithHash {
   hash: string | null | undefined;
   query: (
     query: string,
-    values?: QueryParameterSet,
+    values?: QueryParameterSet
   ) => Promise<RowObject[] | undefined>;
 }
 
-const strPrefix = (v) => `[s3lite] ${v}`;
+const strPrefix = (v: unknown) => `[s3lite] ${v}`;
 
-export default async (
+export default (
   get_: () => Promise<ArrayBuffer | void>,
   set: (buffer: Uint8Array) => boolean | Promise<boolean>,
-  gethash?: () => Promise<string | null | undefined>,
+  gethash?: () => Promise<string | null | undefined>
 ): Promise<DBWithHash> => {
   let db0: DB;
   const get = async () => {
@@ -33,8 +33,8 @@ export default async (
     return db0;
   };
 
-  let hash = await gethash?.().catch(() => null);
-  let db = await get().catch(() => null);
+  let hash: string | null | undefined;
+  let db: DB | null;
 
   let inTransaction = false;
   return {
