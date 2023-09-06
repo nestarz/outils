@@ -2,14 +2,14 @@ import {
   convertHandlerResultToResult,
   GrafservBase,
   normalizeRequest,
-} from "https://esm.sh/grafserv@0.0.1-beta.5?dev&external=ruru,pg,grafast";
+} from "grafserv";
 
 import type {
   GrafservBodyJSON,
   GrafservConfig,
   RequestDigest,
   Result,
-} from "https://esm.sh/grafserv@0.0.1-beta.5?dev&external=ruru,pg,grafast";
+} from "grafserv";
 
 declare global {
   namespace Grafast {
