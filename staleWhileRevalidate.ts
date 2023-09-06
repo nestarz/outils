@@ -1,29 +1,16 @@
-import { createKv, streamToJson } from "./kvUtils.ts";
+/// <reference lib="deno.unstable" />
 
-const createCache = () => {
-  const cacheMap = new Map();
-  const kv = createKv(Deno.env.get("DENO_DEPLOYMENT_ID") ? undefined : "1");
-  const saveToLocal = (key: string, value: any) =>
-    cacheMap.set(String(key), JSON.stringify(value));
-  return {
-    setItem: async (key: string, value: any) => {
-      await kv?.saveFile(key, new TextEncoder().encode(JSON.stringify(value)));
-      return saveToLocal(key, value);
-    },
-    getItem: async (key: string) => {
-      const value =
-        cacheMap.get(key) ??
-        (await kv
-          ?.getFile(String(key))
-          .then((value) => (value ? streamToJson(value) : value))
-          .then((value) => (value ? (saveToLocal(key, value), value) : value)));
-      return typeof value === "string" ? JSON.parse(value) : value;
-    },
-    has: (key: string) => cacheMap.has(key),
-  };
+import type { RouteConfig } from "https://deno.land/x/fresh@1.1.6/server.ts";
+import * as kvUtils from "https://deno.land/x/kv_toolbox@0.0.3/blob.ts";
+
+export const config: RouteConfig = {
+  routeOverride: "/cache/",
 };
 
-const cache = createCache();
+const getHashSync = (str: string) =>
+  String(
+    str.split("").reduce((s, c) => (Math.imul(31, s) + c.charCodeAt(0)) | 0, 0)
+  ).replace(/-/g, "");
 
 const jsonStringifyWithBigIntSupport = (data: unknown) => {
   if (data !== undefined) {
@@ -36,27 +23,58 @@ const jsonStringifyWithBigIntSupport = (data: unknown) => {
 const isFresh = (timestamp: number, maxAge: number) =>
   Date.now() - timestamp < maxAge;
 
+const kv = await Deno.openKv();
+
+type CacheItem<U> = null | { timestamp: number; data: U };
+
 export async function staleWhileRevalidate<U>(
-  key: string,
-  fetchFunc: (arg0: string) => Promise<U>,
+  rawKey: string[],
+  fetchFunc: (arg0: string[]) => Promise<U>,
   maxAge: number
 ) {
-  const value = await cache.getItem(key);
-  if (value) {
-    // && isFresh(cache.getItem(key).timestamp, maxAge)) {
-    if (!isFresh(value.timestamp, maxAge / 2))
-      fetchFunc(key).then((data: U) =>
-        cache.setItem(key, {
-          data: jsonStringifyWithBigIntSupport(data),
-          timestamp: Date.now(),
-        })
+  try {
+    const key = ["_swr", ...rawKey.map((d) => getHashSync(d ?? ""))];
+    const value = (await kvUtils
+      .get(kv, key)
+      .then((r) =>
+        r ? JSON.parse(new TextDecoder().decode(r)) : null
+      )) as CacheItem<U>;
+
+    const set = (data: U) =>
+      kvUtils.set(
+        kv,
+        key,
+        new TextEncoder().encode(
+          jsonStringifyWithBigIntSupport({ data, timestamp: Date.now() })
+        )
       );
-    return JSON.parse(value.data) as U;
+    if (value) {
+      if (!isFresh(value.timestamp, maxAge / 2))
+        fetchFunc(rawKey).then((data: U) => set(data));
+      return value.data;
+    }
+    const data = await fetchFunc(rawKey);
+    set(data);
+    return data;
+  } catch (error) {
+    console.error(error);
   }
-  const data = await fetchFunc(key);
-  cache.setItem(key, {
-    data: jsonStringifyWithBigIntSupport(data),
-    timestamp: Date.now(),
-  });
-  return data as U;
 }
+
+export const handler = {
+  GET: async () => {
+    const result = [];
+    for await (const entry of kv.list({ prefix: ["_swr"] }))
+      result.push(entry.key);
+    return new Response(JSON.stringify(result), {
+      headers: { "content-type": "application/json" },
+    });
+  },
+  POST: async (req: Request) => {
+    const body = await req.json().catch(() => ({}));
+    const key = getHashSync(body.key ?? "");
+    for await (const entry of kv.list({ prefix: ["_swr", key] }))
+      await kv.delete(entry.key);
+    return new Response(JSON.stringify({ success: true }));
+  },
+};
