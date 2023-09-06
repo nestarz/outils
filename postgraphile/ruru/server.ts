@@ -1,8 +1,8 @@
 const { version } = { version: "2" };
 
-const graphiQLContent = await Deno.readTextFile(
+const graphiQLContent = await fetch(
   new URL("./bundle/ruru.min.js", import.meta.url)
-);
+).then((r) => r.text());
 
 // Ref: https://v8.dev/features/subsume-json
 const escapeJS = (str: string) => {
