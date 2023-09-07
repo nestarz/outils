@@ -47,6 +47,7 @@ export async function staleWhileRevalidate<U>(
         new TextEncoder().encode(
           jsonStringifyWithBigIntSupport({ data, timestamp: Date.now() })
         )
+        // { expireIn: maxAge }
       );
     if (value) {
       if (!isFresh(value.timestamp, maxAge / 2))
@@ -58,6 +59,10 @@ export async function staleWhileRevalidate<U>(
     return data;
   } catch (error) {
     console.error(error);
+  } finally {
+    for await (const iterator of kv.list({ prefix: ["_swr"] }))
+      if (!isFresh(new Date(iterator.versionstamp).getTime(), maxAge))
+        kv.delete(iterator.key);
   }
 }
 
