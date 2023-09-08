@@ -45,7 +45,7 @@ export async function staleWhileRevalidate<U>(
   rawKey: string[],
   fetchFunc: (arg0: string[]) => Promise<U>,
   maxAge: number,
-  useKv: boolean
+  useKv = false
 ) {
   try {
     const key = ["_swr", ...rawKey.map((d) => getHashSync(d ?? ""))];
@@ -86,7 +86,7 @@ export const handler = {
     const result = { swrCache: [], kv: [] };
     for await (const entry of kv.list({ prefix: ["_swr"] }))
       result.kv.push(entry.key);
-    result.swrCache = swrCache.map.keys();
+    result.swrCache = [...swrCache.map.keys()];
     return new Response(JSON.stringify(result), {
       headers: { "content-type": "application/json" },
     });
