@@ -7,7 +7,7 @@ export const config: RouteConfig = {
   routeOverride: "/cache/",
 };
 
-const cache = (() => {
+export const swrCache = (() => {
   const cache = new Map();
   const toStr = JSON.stringify;
   return {
@@ -49,14 +49,14 @@ export async function staleWhileRevalidate<U>(
 ) {
   try {
     const key = ["_swr", ...rawKey.map((d) => getHashSync(d ?? ""))];
-    const value = (await cache
+    const value = (await swrCache
       .get(key, () => (useKv ? kvUtils.get(kv, key) : undefined))
       .then((r) =>
         r ? JSON.parse(new TextDecoder().decode(r)) : null
       )) as CacheItem<U>;
 
     const set = (data: U) =>
-      cache.save(key, async () => {
+      swrCache.save(key, async () => {
         const value = new TextEncoder().encode(
           jsonStringifyWithBigIntSupport({ data, timestamp: Date.now() })
         );
@@ -83,9 +83,10 @@ export async function staleWhileRevalidate<U>(
 
 export const handler = {
   GET: async () => {
-    const result = [];
+    const result = { swrCache: [], kv: [] };
     for await (const entry of kv.list({ prefix: ["_swr"] }))
-      result.push(entry.key);
+      result.kv.push(entry.key);
+    result.swrCache = swrCache.map.keys();
     return new Response(JSON.stringify(result), {
       headers: { "content-type": "application/json" },
     });
@@ -95,8 +96,8 @@ export const handler = {
     const key = getHashSync(body.key ?? "");
     for await (const entry of kv.list({ prefix: ["_swr", key] }))
       await kv.delete(entry.key);
-    for (const key of cache.map.keys())
-      if (JSON.parse(key)?.[1] === key) cache.map.delete(key);
+    for (const cacheKey of swrCache.map.keys())
+      if (JSON.parse(key)?.[1] === cacheKey) swrCache.map.delete(cacheKey);
     return new Response(JSON.stringify({ success: true }));
   },
 };
