@@ -7,6 +7,19 @@ export const config: RouteConfig = {
   routeOverride: "/cache/",
 };
 
+const cache = (() => {
+  const cache = new Map();
+  const toStr = JSON.stringify;
+  return {
+    get: async <T, U>(key: T, fn: (key: T) => U | Promise<U>): Promise<U> =>
+      cache.has(toStr(key)) ? (cache.get(toStr(key)) as U) : await fn(key),
+    save: <T, U>(key: T, getFn: (key: T) => U) =>
+      Promise.resolve(getFn(key)).then((value) =>
+        cache.set(toStr(key), value).get(toStr(key))
+      ),
+  };
+})();
+
 const getHashSync = (str: string) =>
   String(
     str.split("").reduce((s, c) => (Math.imul(31, s) + c.charCodeAt(0)) | 0, 0)
@@ -34,21 +47,20 @@ export async function staleWhileRevalidate<U>(
 ) {
   try {
     const key = ["_swr", ...rawKey.map((d) => getHashSync(d ?? ""))];
-    const value = (await kvUtils
-      .get(kv, key)
+    const value = (await cache
+      .get(key, () => kvUtils.get(kv, key))
       .then((r) =>
         r ? JSON.parse(new TextDecoder().decode(r)) : null
       )) as CacheItem<U>;
 
     const set = (data: U) =>
-      kvUtils.set(
-        kv,
-        key,
-        new TextEncoder().encode(
+      cache.save(key, async () => {
+        const value = new TextEncoder().encode(
           jsonStringifyWithBigIntSupport({ data, timestamp: Date.now() })
-        )
-        // { expireIn: maxAge }
-      );
+        );
+        await kvUtils.set(kv, key, value);
+        return value;
+      });
     if (value) {
       if (!isFresh(value.timestamp, maxAge / 2))
         fetchFunc(rawKey).then((data: U) => set(data));
