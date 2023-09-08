@@ -83,10 +83,9 @@ export async function staleWhileRevalidate<U>(
 
 export const handler = {
   GET: async () => {
-    const result = { swrCache: [], kv: [] };
+    const result = { swrCache: [...swrCache.map.keys()], kv: [] };
     for await (const entry of kv.list({ prefix: ["_swr"] }))
       result.kv.push(entry.key);
-    result.swrCache = [...swrCache.map.keys()];
     return new Response(JSON.stringify(result), {
       headers: { "content-type": "application/json" },
     });
@@ -94,10 +93,10 @@ export const handler = {
   POST: async (req: Request) => {
     const body = await req.json().catch(() => ({}));
     const key = getHashSync(body.key ?? "");
+    for (const cacheKey of swrCache.map.keys())
+      if (JSON.parse(cacheKey)?.[1] === key) swrCache.map.delete(cacheKey);
     for await (const entry of kv.list({ prefix: ["_swr", key] }))
       await kv.delete(entry.key);
-    for (const cacheKey of swrCache.map.keys())
-      if (JSON.parse(key)?.[1] === cacheKey) swrCache.map.delete(cacheKey);
     return new Response(JSON.stringify({ success: true }));
   },
 };
