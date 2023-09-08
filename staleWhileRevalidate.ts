@@ -17,6 +17,7 @@ const cache = (() => {
       Promise.resolve(getFn(key)).then((value) =>
         cache.set(toStr(key), value).get(toStr(key))
       ),
+    map: cache,
   };
 })();
 
@@ -43,12 +44,13 @@ type CacheItem<U> = null | { timestamp: number; data: U };
 export async function staleWhileRevalidate<U>(
   rawKey: string[],
   fetchFunc: (arg0: string[]) => Promise<U>,
-  maxAge: number
+  maxAge: number,
+  useKv: boolean
 ) {
   try {
     const key = ["_swr", ...rawKey.map((d) => getHashSync(d ?? ""))];
     const value = (await cache
-      .get(key, () => kvUtils.get(kv, key))
+      .get(key, () => (useKv ? kvUtils.get(kv, key) : undefined))
       .then((r) =>
         r ? JSON.parse(new TextDecoder().decode(r)) : null
       )) as CacheItem<U>;
@@ -58,7 +60,7 @@ export async function staleWhileRevalidate<U>(
         const value = new TextEncoder().encode(
           jsonStringifyWithBigIntSupport({ data, timestamp: Date.now() })
         );
-        await kvUtils.set(kv, key, value);
+        if (useKv) await kvUtils.set(kv, key, value);
         return value;
       });
     if (value) {
@@ -72,9 +74,10 @@ export async function staleWhileRevalidate<U>(
   } catch (error) {
     console.error(error);
   } finally {
-    for await (const iterator of kv.list({ prefix: ["_swr"] }))
-      if (!isFresh(new Date(iterator.versionstamp).getTime(), maxAge))
-        kv.delete(iterator.key);
+    if (useKv)
+      for await (const iterator of kv.list({ prefix: ["_swr"] }))
+        if (!isFresh(new Date(iterator.versionstamp).getTime(), maxAge))
+          kv.delete(iterator.key);
   }
 }
 
@@ -92,6 +95,8 @@ export const handler = {
     const key = getHashSync(body.key ?? "");
     for await (const entry of kv.list({ prefix: ["_swr", key] }))
       await kv.delete(entry.key);
+    for (const key of cache.map.keys())
+      if (JSON.parse(key)?.[1] === key) cache.map.delete(key);
     return new Response(JSON.stringify({ success: true }));
   },
 };
