@@ -1,5 +1,6 @@
 import type { PoolClient } from "https://deno.land/x/postgres@v0.17.0/mod.ts";
 import type {
+  Kysely,
   CompiledQuery,
   InferResult,
 } from "https://esm.sh/kysely@0.26.3?dts";
