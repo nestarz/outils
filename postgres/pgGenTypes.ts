@@ -136,4 +136,33 @@ export const postgresQuery = () => `
     table_schema;
 `;
 
-export default pgGenTypes;
+export const createPostgresTypes = () => {
+  let fetchedTypes = false;
+  const get = (fn: (query: string) => { rows: any }) =>
+    fn(postgresQuery()).then(({ rows }) => pgGenTypes(rows as any));
+
+  return {
+    get,
+    save: (fn: Parameters<typeof get>[0]) => {
+      const withWriteAccess = await Deno.permissions
+        .query({ name: "write", path: Deno.cwd() })
+        .then((d) => d.state === "granted");
+
+      if (!fetchedTypes && withWriteAccess) {
+        fetchedTypes = true;
+        gen(fn)
+          .then((types) => {
+            const cache = await Deno.readTextFile("types.pg.d.ts");
+            if (cache !== types)
+              await Deno.writeTextFile("types.pg.d.ts", types);
+          })
+          .catch((err) => {
+            fetchedTypes = false;
+            console.error(err);
+          });
+      }
+    },
+  };
+};
+
+export default createPostgresTypes;
