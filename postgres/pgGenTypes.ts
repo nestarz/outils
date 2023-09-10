@@ -143,7 +143,7 @@ export const createPostgresTypes = () => {
 
   return {
     get,
-    save: (fn: Parameters<typeof get>[0]) => {
+    save: async (fn: Parameters<typeof get>[0]) => {
       const withWriteAccess = await Deno.permissions
         .query({ name: "write", path: Deno.cwd() })
         .then((d) => d.state === "granted");
@@ -151,7 +151,7 @@ export const createPostgresTypes = () => {
       if (!fetchedTypes && withWriteAccess) {
         fetchedTypes = true;
         gen(fn)
-          .then((types) => {
+          .then(async (types) => {
             const cache = await Deno.readTextFile("types.pg.d.ts");
             if (cache !== types)
               await Deno.writeTextFile("types.pg.d.ts", types);
