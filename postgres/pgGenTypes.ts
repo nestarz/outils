@@ -138,7 +138,7 @@ export const postgresQuery = () => `
 
 export const createPostgresTypes = () => {
   let fetchedTypes = false;
-  const get = (fn: (query: string) => { rows: any }) =>
+  const get = (fn: (query: string) => Promise<{ rows: any }>) =>
     fn(postgresQuery()).then(({ rows }) => pgGenTypes(rows as any));
 
   return {
@@ -150,7 +150,7 @@ export const createPostgresTypes = () => {
 
       if (!fetchedTypes && withWriteAccess) {
         fetchedTypes = true;
-        gen(fn)
+        get(fn)
           .then(async (types) => {
             const cache = await Deno.readTextFile("types.pg.d.ts");
             if (cache !== types)
