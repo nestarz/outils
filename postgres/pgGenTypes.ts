@@ -152,7 +152,9 @@ export const createPostgresTypes = () => {
         fetchedTypes = true;
         get(fn)
           .then(async (types) => {
-            const cache = await Deno.readTextFile("types.pg.d.ts");
+            const cache = await Deno.readTextFile("types.pg.d.ts").catch(
+              () => null
+            );
             if (cache !== types)
               await Deno.writeTextFile("types.pg.d.ts", types);
           })
