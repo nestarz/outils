@@ -26,4 +26,8 @@ const preferNative: typeof groupByToMap = (array, callback) => {
   return groupByToMap(array, callback);
 };
 
+const groupByToArray = <T, K>(
+  ...params: Parameters<typeof groupByToMap<T, K>>
+) => [...groupByToMap(params[0], params[1]))];
+
 export default preferNative;
