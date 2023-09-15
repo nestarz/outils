@@ -2,7 +2,7 @@ export const generateAutomatedRoutes = async (
   walkGenerator: AsyncGenerator<{ path: string }>,
   options: { baseUrl: string; routePath: string }
 ) => {
-  const routePath = options?.routePath ?? "./routes.ts";
+  const routePath = options?.routePath ?? Deno.cwd().concat("/routes.ts");
   const automatedRoutePaths = [];
   for await (const iterator of walkGenerator)
     automatedRoutePaths.push(`./${iterator.path}`);
