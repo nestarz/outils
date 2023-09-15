@@ -1,6 +1,6 @@
 export const generateAutomatedRoutes = async (
   walkGenerator: AsyncGenerator<{ path: string }>,
-  options: { root: string; routePath: string }
+  options: { baseUrl: string; routePath: string }
 ) => {
   const routePath = options?.routePath ?? "./routes.ts";
   const automatedRoutePaths = [];
@@ -23,10 +23,10 @@ export const generateAutomatedRoutes = async (
   if (needUpdate && withWriteAccess)
     await Deno.writeTextFile(
       routePath,
-      `export const routes = [${automatedRoutePaths
+      `export const routes = [\n${automatedRoutePaths
         .map((v) => JSON.stringify(v))
-        .map((path) => `{ "module": await import(${path}), "path": ${path}; }`)
-        .join(", ")}];`
+        .map((path) => `\t{ "module": await import(${path}), "path": ${path} }`)
+        .join(",\n")}\n];`
     );
   return (prevRoutes?.routes ?? [])
     .map((route) => route.module)
