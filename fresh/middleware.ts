@@ -15,7 +15,13 @@ export const middleware =
     params: Record<string, string>
   ): Promise<Response> => {
     const destination = "route" as MiddlewareHandlerContext["destination"];
-    const ctx = { ...conn, params, state: {}, destination };
+    const ctx = {
+      remoteAddr: conn.remoteAddr,
+      localAddr: conn.localAddr,
+      params,
+      state: {},
+      destination,
+    };
     const createNext = (i: number): MiddlewareHandlerContext => ({
       ...ctx,
       next: async () => await fns[i](req, createNext(i + 1)),
