@@ -23,25 +23,27 @@ export const createSqliteMiddleware = <Schema>({
 }) => {
   const sqliteTypes = sqliteGenTypes();
 
-  return async (
-    _req: Request,
-    ctx: MiddlewareHandlerContext<SqliteMiddlewareState<Schema>>
-  ) => {
-    ctx.state.db = database;
-    const dbQuery =
-      ctx.state.db.queryEntries ??
-      ((ctx.state.db as unknown as { query: unknown })
-        .query as unknown as typeof ctx.state.db.queryEntries);
-    const qb = new Kysely<Schema>({
-      dialect: new SqliteDialect(null!),
-    });
-    await sqliteTypes.save((query) => dbQuery<any>(query));
-    ctx.state.clientQuery = createQueryFunction(dbQuery, qb, [
-      ...(withDeserializeNestedJSON ? [deserializeNestedJSON] : []),
-      ...(afterHooks ?? []),
-    ]);
-    const resp = await ctx.next();
-    return resp;
+  return {
+    handler: async (
+      _req: Request,
+      ctx: MiddlewareHandlerContext<SqliteMiddlewareState<Schema>>
+    ) => {
+      ctx.state.db = database;
+      const dbQuery =
+        ctx.state.db.queryEntries ??
+        ((ctx.state.db as unknown as { query: unknown })
+          .query as unknown as typeof ctx.state.db.queryEntries);
+      const qb = new Kysely<Schema>({
+        dialect: new SqliteDialect(null!),
+      });
+      await sqliteTypes.save((query) => dbQuery<any>(query));
+      ctx.state.clientQuery = createQueryFunction(dbQuery, qb, [
+        ...(withDeserializeNestedJSON ? [deserializeNestedJSON] : []),
+        ...(afterHooks ?? []),
+      ]);
+      const resp = await ctx.next();
+      return resp;
+    },
   };
 };
 
