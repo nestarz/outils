@@ -6,7 +6,7 @@ import sqliteGenTypes from "https://deno.land/x/outils@0.0.87/database/generateS
 import createQueryFunction from "https://deno.land/x/outils@0.0.87/database/createSqliteQueryFunction.ts";
 import deserializeNestedJSON from "https://deno.land/x/outils@0.0.87/deserializeNestedJSON.ts";
 
-export type DatabaseClientState<Schema> = {
+export type SqliteMiddlewareState<Schema> = {
   db: DB;
   qb: Kysely<Schema>;
   clientQuery: ReturnType<typeof createQueryFunction<Schema>>;
@@ -25,7 +25,7 @@ export const createSqliteMiddleware = <Schema>({
 
   return async (
     _req: Request,
-    ctx: MiddlewareHandlerContext<DatabaseClientState<Schema>>
+    ctx: MiddlewareHandlerContext<SqliteMiddlewareState<Schema>>
   ) => {
     ctx.state.db = database;
     const dbQuery =
