@@ -42,3 +42,5 @@ export const createCors =
         }, res)
       );
   };
+
+export default createCors;
