@@ -8,7 +8,7 @@ const createQueryFunction = <V>(
   query: <P>(
     sql: string,
     params?: unknown[],
-  ) => Promise<{ rows: P }> | { rows: P },
+  ) => Promise<{ rows: P[] }> | { rows: P[] },
   qb: Kysely<V>,
   hooks?: (<X>(...v: any[]) => X)[],
 ) =>
