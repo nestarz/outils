@@ -5,7 +5,10 @@ import type {
 } from "https://esm.sh/kysely@0.26.3?dts";
 
 const createQueryFunction = <V>(
-  query: <P>(sql: string, params?: unknown[]) => { rows: P },
+  query: <P>(
+    sql: string,
+    params?: unknown[],
+  ) => Promise<{ rows: P }> | { rows: P },
   qb: Kysely<V>,
   hooks?: (<X>(...v: any[]) => X)[],
 ) =>
