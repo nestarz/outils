@@ -28,7 +28,7 @@ export const partialTrigger = (
         document.documentElement.append(
           ...partialDocument.querySelectorAll<
             HTMLScriptElement | HTMLHeadElement
-          >("script, head > *"),
+          >("script, head > *:not(script)"),
         );
         partialDocument
           .querySelectorAll<HTMLElement>("[data-partial-id]")
@@ -38,12 +38,12 @@ export const partialTrigger = (
                 `[data-partial-id=${newNode.dataset.partialId}]`,
               )
                 .forEach((node) => {
-                  const copyNode = newNode.cloneNode() as HTMLElement;
+                  const copyNode = newNode.cloneNode(true) as HTMLElement;
                   ["append", "prepend"].includes(
                       copyNode.dataset.partialMode ?? "",
                     )
                     ? copyNode.dataset.partialMode === "append"
-                      ? node.append("test", ...copyNode.childNodes)
+                      ? node.append(...copyNode.childNodes)
                       : node.prepend(...copyNode.childNodes)
                     : node.replaceChildren(...copyNode.childNodes);
                 }),
