@@ -37,15 +37,16 @@ export const partialTrigger = (
               document.querySelectorAll<HTMLElement>(
                 `[data-partial-id=${newNode.dataset.partialId}]`,
               )
-                .forEach((node) =>
+                .forEach((node) => {
+                  const copyNode = newNode.cloneNode() as HTMLElement;
                   ["append", "prepend"].includes(
-                      newNode.dataset.partialMode ?? "",
+                      copyNode.dataset.partialMode ?? "",
                     )
-                    ? newNode.dataset.partialMode === "append"
-                      ? node.append("test", ...newNode.childNodes)
-                      : node.prepend(...newNode.childNodes)
-                    : node.replaceChildren(...newNode.childNodes)
-                ),
+                    ? copyNode.dataset.partialMode === "append"
+                      ? node.append("test", ...copyNode.childNodes)
+                      : node.prepend(...copyNode.childNodes)
+                    : node.replaceChildren(...copyNode.childNodes);
+                }),
           );
       });
   });
