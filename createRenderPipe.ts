@@ -62,7 +62,7 @@ export const createRenderPipe =
         )
       : undefined;
     return (
-      route.handler?.[req.method]?.(req, { ...newCtx, render }) ??
+      route.handler?.[req.method]?.(req, { ...newCtx, render, vNodePipe }) ??
       (req.method === "GET" ? render?.() : new Response(null, { status: 404 }))
     );
   };
