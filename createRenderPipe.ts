@@ -49,18 +49,23 @@ export const createRenderPipe =
             })
     );
 
-    const render = route.default
-      ? pipe(
-          (data: unknown) =>
-            route.handler?.GET ? [{ ...props, data }] : [req, newCtx],
-          ([p1, p2]) => route.default?.(p1, p2),
-          (node) => [node, { ...newCtx, Component: () => node }],
-          ([node, ctx]) =>
-            node instanceof Response
-              ? node
-              : vNodePipe(config?.Layout?.default(req, ctx) ?? node)
-        )
-      : undefined;
+  const render = route.default
+    ? pipe(
+      (data: unknown) =>
+        route.handler?.GET ? [{ ...props, data }] : [req, newCtx],
+      ([p1, p2]) =>
+        Promise.resolve().then(() => route.default?.(p1, p2))
+          .catch((err) => (console.error(err), Promise.reject(err))),
+      (node) => [node, { ...newCtx, Component: () => node }],
+      ([node, ctx]) =>
+        node instanceof Response ? node : vNodePipe(
+          Promise.resolve().then(() => config?.Layout?.default(req, ctx)).catch(
+            (err) => (console.error(err), Promise.reject(err)),
+          ) ?? node,
+        ),
+    )
+    : undefined;
+    
     return (
       route.handler?.[req.method]?.(req, { ...newCtx, render, vNodePipe }) ??
       (req.method === "GET" ? render?.() : new Response(null, { status: 404 }))
