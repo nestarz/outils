@@ -59,9 +59,9 @@ export const createRenderPipe =
       (node) => [node, { ...newCtx, Component: () => node }],
       ([node, ctx]) =>
         node instanceof Response ? node : vNodePipe(
-          Promise.resolve().then(() => config?.Layout?.default(req, ctx)).catch(
+          Promise.resolve().then(() => config?.Layout?.default(req, ctx) ?? node).catch(
             (err) => (console.error(err), Promise.reject(err)),
-          ) ?? node,
+          ),
         ),
     )
     : undefined;
