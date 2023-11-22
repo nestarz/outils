@@ -27,7 +27,7 @@ export const createRenderPipe =
   ) =>
   (
     route: RouteConfig<VNode>,
-    config?: { responseInit?: ResponseInit; Layout?: { default: AsyncLayout } },
+    config?: { responseInit?: ResponseInit; Layout?: { default: AsyncLayout<any, any> } },
   ) =>
   (req: Request, rawCtx: HandlerContext, matcher?: Record<string, string>) => {
     const url = new URL(req.url);
@@ -51,7 +51,7 @@ export const createRenderPipe =
             node instanceof Response
               ? node
               : !node
-              ? Promise.reject("Missing Response")
+              ? Promise.reject("Missing Response or JSXElement")
               : Promise.resolve({ ...ctx, Component: () => node })
                 .then((ctx) =>
                   (config?.Layout?.default(req, ctx) as Promise<typeof node>) ??
