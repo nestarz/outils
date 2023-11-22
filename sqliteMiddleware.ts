@@ -19,7 +19,7 @@ export const createSqliteMiddleware = <Schema>({
 }: {
   database: DB;
   withDeserializeNestedJSON?: boolean;
-  afterHooks: Parameters<typeof createQueryFunction>[2];
+  afterHooks?: Parameters<typeof createQueryFunction>[2];
 }) => {
   const sqliteTypes = sqliteGenTypes();
 
