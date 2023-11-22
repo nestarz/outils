@@ -9,8 +9,8 @@ export interface DBWithHash {
   hash: string | null | undefined;
   query: (
     query: string,
-    values?: QueryParameterSet
-  ) => Promise<RowObject[] | undefined>;
+    values?: QueryParameterSet,
+  ) => Promise<RowObject[]>;
 }
 
 const strPrefix = (v: unknown) => `[s3lite] ${v}`;
@@ -18,17 +18,18 @@ const strPrefix = (v: unknown) => `[s3lite] ${v}`;
 export default (
   get_: () => Promise<ArrayBuffer | void>,
   set: (buffer: Uint8Array) => boolean | Promise<boolean>,
-  gethash?: () => Promise<string | null | undefined>
+  gethash?: () => Promise<string | null | undefined>,
+  verbose: "info" | "error" = "info",
 ): Promise<DBWithHash> => {
   let db0: DB;
   const get = async () => {
     const buffer = await get_().catch(() => null);
     if (db0) {
-      console.log(strPrefix("close"));
+      if (/error|info/.test(verbose)) console.log(strPrefix("close"));
       db0.close();
     }
     db0 = new DB("", { memory: true });
-    console.log(strPrefix("open"));
+    if (/error|info/.test(verbose)) console.log(strPrefix("open"));
     if (buffer) db0.deserialize(new Uint8Array(buffer));
     return db0;
   };
@@ -37,15 +38,17 @@ export default (
   let db: DB | null;
 
   let inTransaction = false;
-  return {
+  return Promise.resolve({
     get _db() {
       return db;
     },
     get hash() {
       return hash;
     },
-    query: async (query, values?: QueryParameterSet) => {
-      console.log(strPrefix(query));
+    query: async (query: string, values?: QueryParameterSet) => {
+      if (/error|info/.test(verbose)) {
+        console.log(strPrefix(query));
+      }
       const newhash = await gethash?.().catch(() => null);
       if (newhash !== hash || !newhash) db = await get();
       hash = newhash;
@@ -53,7 +56,7 @@ export default (
       if (typeof db === "undefined" || db === null) throw Error("Missing DB");
 
       return Promise.resolve()
-        .then(() => db?.queryEntries(query, values))
+        .then(() => db?.queryEntries(query, values) ?? [])
         .then(async (res) => {
           if (query.match(/BEGIN/gi)) inTransaction = true;
           if (query.match(/ROLLBACK/gi) || query.match(/COMMIT/gi)) {
@@ -63,7 +66,9 @@ export default (
             if (
               query.match(/DELETE|INSERT|UPDATE|CREATE|ALTER|COMMIT|DROP/gi)
             ) {
-              console.log(strPrefix("saving..."));
+              if (/error|info/.test(verbose)) {
+                console.log(strPrefix("saving..."));
+              }
               if (db) await set(db.serialize());
             }
           }
@@ -74,5 +79,5 @@ export default (
           throw Error(strPrefix(JSON.stringify(error)));
         });
     },
-  };
+  });
 };
