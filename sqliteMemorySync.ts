@@ -4,13 +4,15 @@ import type {
 } from "https://deno.land/x/sqlite@v3.8/mod.ts";
 import { DB } from "https://deno.land/x/sqlite@v3.8/mod.ts";
 
+export type QueryFn = <O extends RowObject = RowObject>(
+  sql: string,
+  values?: QueryParameterSet,
+) => Promise<Array<O>>;
+
 export interface DBWithHash {
   _db: DB | null;
   hash: string | null | undefined;
-  query: (
-    query: string,
-    values?: QueryParameterSet,
-  ) => Promise<RowObject[]>;
+  query: QueryFn;
 }
 
 const strPrefix = (v: unknown) => `[s3lite] ${v}`;
