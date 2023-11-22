@@ -1,34 +1,28 @@
 import type { MiddlewareHandlerContext } from "https://deno.land/x/fresh@1.5.2/server.ts";
-import type {
-  DB,
-  QueryParameterSet,
-  RowObject,
-} from "https://deno.land/x/sqlite@v3.8/mod.ts";
+import type { QueryParameter, RowObject } from "https://deno.land/x/sqlite@v3.8/mod.ts";
 
 import { Kysely, SqliteDialect } from "https://esm.sh/kysely@0.26.3?dts";
-import sqliteGenTypes from "https://deno.land/x/outils@0.0.87/database/generateSqliteTypes.ts";
-import createQueryFunction from "https://deno.land/x/outils@0.0.87/database/createSqliteQueryFunction.ts";
-import deserializeNestedJSON from "https://deno.land/x/outils@0.0.87/deserializeNestedJSON.ts";
+import sqliteGenTypes from "https://deno.land/x/outils@0.0.111/database/generateSqliteTypes.ts";
+import deserializeNestedJSON from "https://deno.land/x/outils@0.0.111/deserializeNestedJSON.ts";
+import createQueryFunction from "https://deno.land/x/outils@0.0.111/database/createSqliteQueryFunction.ts";
 
-interface DBClassic {
-  query: (
-    query: string,
-    values?: QueryParameterSet,
-  ) => Promise<RowObject[] | undefined>;
-}
+export type QueryFn = <O extends RowObject = RowObject>(
+  sql: string,
+  values?: QueryParameter[],
+) => Promise<Array<O>>;
 
 export type SqliteMiddlewareState<Schema> = {
-  db: DB | DBClassic;
+  db: { query: QueryFn };
   qb: Kysely<Schema>;
   clientQuery: ReturnType<typeof createQueryFunction<Schema>>;
 };
 
-export const createSqliteMiddleware = <Schema>({
+export const createSqliteMiddleware = <Schema,>({
   database,
   withDeserializeNestedJSON,
   afterHooks,
 }: {
-  database: DB;
+  database: { query: QueryFn };
   withDeserializeNestedJSON?: boolean;
   afterHooks?: Parameters<typeof createQueryFunction>[2];
 }) => {
@@ -40,8 +34,9 @@ export const createSqliteMiddleware = <Schema>({
       ctx: MiddlewareHandlerContext<SqliteMiddlewareState<Schema>>,
     ) => {
       ctx.state.db = database;
-      const dbQuery = ctx.state.db.queryEntries ??
-        ctx.state.db.query;
+      const dbQuery = "queryEntries" in ctx.state.db
+        ? ctx.state.db.queryEntries as typeof ctx.state.db.query
+        : ctx.state.db.query;
       const qb = new Kysely<Schema>({
         dialect: new SqliteDialect(null!),
       });
