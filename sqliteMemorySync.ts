@@ -17,7 +17,7 @@ export interface DBWithHash {
 
 const strPrefix = (v: unknown) => `[s3lite] ${v}`;
 
-export default (
+export const sqliteMemorySync = (
   get_: () => Promise<ArrayBuffer | void>,
   set: (buffer: Uint8Array) => boolean | Promise<boolean>,
   gethash?: () => Promise<string | null | undefined>,
@@ -47,7 +47,7 @@ export default (
     get hash() {
       return hash;
     },
-    query: async (query: string, values?: QueryParameterSet) => {
+    query: async <O extends RowObject>(query: string, values?: QueryParameterSet) => {
       if (/error|info/.test(verbose)) {
         console.log(strPrefix(query));
       }
@@ -58,7 +58,7 @@ export default (
       if (typeof db === "undefined" || db === null) throw Error("Missing DB");
 
       return Promise.resolve()
-        .then(() => db?.queryEntries(query, values) ?? [])
+        .then(() => db?.queryEntries<O>(query, values) ?? [])
         .then(async (res) => {
           if (query.match(/BEGIN/gi)) inTransaction = true;
           if (query.match(/ROLLBACK/gi) || query.match(/COMMIT/gi)) {
@@ -83,3 +83,5 @@ export default (
     },
   });
 };
+
+export default sqliteMemorySync;
