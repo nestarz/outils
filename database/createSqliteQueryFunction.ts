@@ -1,14 +1,13 @@
 import type {
   CompiledQuery,
   InferResult,
-  Kysely,
 } from "https://esm.sh/kysely@0.26.3?dts";
 
-const createQueryFunction = <V>(
-  query: <P>(
+const createQueryFunction = <V,>(
+  query: <P extends RowObject = RowObject>(
     sql: string,
-    params?: unknown[],
-  ) => Promise<{ rows: P[] }> | { rows: P[] },
+    params?: QueryParameter[],
+  ) => Promise<P[]> | P[],
   qb: Kysely<V>,
   hooks?: (<X>(...v: any[]) => X)[],
 ) =>
@@ -17,7 +16,7 @@ const createQueryFunction = <V>(
   const value = Promise.resolve(
     query<InferResult<T>[0]>(
       sql,
-      parameters as unknown[],
+      parameters as QueryParameter[],
     ),
   );
   return (hooks ?? [])
