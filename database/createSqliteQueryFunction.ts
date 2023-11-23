@@ -1,13 +1,17 @@
+import type { QueryParameter, RowObject } from "https://deno.land/x/sqlite@v3.8/mod.ts";
 import type {
+  Kysely,
   CompiledQuery,
   InferResult,
 } from "https://esm.sh/kysely@0.26.3?dts";
 
-const createQueryFunction = <V,>(
-  query: <P extends RowObject = RowObject>(
-    sql: string,
-    params?: QueryParameter[],
-  ) => Promise<P[]> | P[],
+export type QueryFn = <O extends RowObject = RowObject>(
+  sql: string,
+  values?: QueryParameter[],
+) => Promise<Array<O>>;
+
+export const createQueryFunction = <V,>(
+  query: QueryFn,
   qb: Kysely<V>,
   hooks?: (<X>(...v: any[]) => X)[],
 ) =>
@@ -16,7 +20,7 @@ const createQueryFunction = <V,>(
   const value = Promise.resolve(
     query<InferResult<T>[0]>(
       sql,
-      parameters as QueryParameter[],
+      parameters as unknown as Parameters<typeof query>[1],
     ),
   );
   return (hooks ?? [])
