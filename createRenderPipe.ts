@@ -38,7 +38,7 @@ export const createRenderPipe =
     const url = new URL(req.url);
     const ctx = {
       ...rawCtx,
-      params: matcher ?? {},
+      params: rawCtx.params ?? matcher ?? {},
       url,
       route: route.config?.routeOverride ?? null!,
       data: null!,
