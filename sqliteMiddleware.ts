@@ -2,9 +2,9 @@ import type { MiddlewareHandlerContext } from "https://deno.land/x/fresh@1.5.2/s
 import type { QueryParameter, RowObject } from "https://deno.land/x/sqlite@v3.8/mod.ts";
 
 import { Kysely, SqliteDialect } from "https://esm.sh/kysely@0.26.3?dts";
-import sqliteGenTypes from "https://deno.land/x/outils@0.0.111/database/generateSqliteTypes.ts";
-import deserializeNestedJSON from "https://deno.land/x/outils@0.0.111/deserializeNestedJSON.ts";
-import createQueryFunction from "https://deno.land/x/outils@0.0.111/database/createSqliteQueryFunction.ts";
+import sqliteGenTypes from "https://deno.land/x/outils@0.0.119/database/generateSqliteTypes.ts";
+import deserializeNestedJSON from "https://deno.land/x/outils@0.0.119/deserializeNestedJSON.ts";
+import createQueryFunction from "https://deno.land/x/outils@0.0.119/database/createSqliteQueryFunction.ts";
 
 export type QueryFn = <O extends RowObject = RowObject>(
   sql: string,
