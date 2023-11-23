@@ -49,8 +49,8 @@ export const createRenderPipe =
       ? (data?: Record<string, unknown>) =>
         Promise.resolve(
           typeof route.handler === "function" || route.handler?.GET
-            ? (route.default as PropHandler<VNode>)?.({ url, ctx, data }),
-            : (route.default as RequestHandler<VNode>)?.(req, ctx)
+            ? (route.default as PropHandler<VNode>)?.({ url, ctx, data })
+            : (route.default as RequestHandler<VNode>)?.(req, ctx),
         )
           .then((node) =>
             node instanceof Response
