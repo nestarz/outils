@@ -34,7 +34,11 @@ export const createRenderPipe =
       Layout?: { default: AsyncLayout<any, any> };
     },
   ) =>
-  (req: Request, rawCtx: HandlerContext, matcher?: Record<string, string>) => {
+  (
+    req: Request,
+    rawCtx: HandlerContext,
+    matcher?: Record<string, string>,
+  ) => {
     const url = new URL(req.url);
     const ctx = {
       ...rawCtx,
@@ -51,35 +55,38 @@ export const createRenderPipe =
           typeof route.handler === "function" || route.handler?.GET
             ? (route.default as PropHandler<VNode>)?.({ url, ctx, data })
             : (route.default as RequestHandler<VNode>)?.(req, ctx),
+        ).then((node) =>
+          node instanceof Response
+            ? node
+            : !node
+            ? Promise.reject("Missing Response or JSXElement")
+            : Promise.resolve({ ...ctx, Component: () => node })
+              .then(
+                (ctx) =>
+                  (config?.Layout?.default(req, ctx) as Promise<
+                    typeof node
+                  >) ?? node,
+              )
+              .then(virtualNodePipe)
+              .then((result) =>
+                result instanceof Response ? result : new Response(result, {
+                  headers: {
+                    "content-type": "text/html; charset=utf-8",
+                  },
+                })
+              )
         )
-          .then((node) =>
-            node instanceof Response
-              ? node
-              : !node
-              ? Promise.reject("Missing Response or JSXElement")
-              : Promise.resolve({ ...ctx, Component: () => node })
-                .then((ctx) =>
-                  (config?.Layout?.default(req, ctx) as Promise<typeof node>) ??
-                    node
-                )
-                .then(virtualNodePipe)
-                .then(
-                  (result) =>
-                    result instanceof Response ? result : new Response(result, {
-                      headers: { "content-type": "text/html; charset=utf-8" },
-                    }),
-                )
-          )
       : undefined;
 
     return Promise.resolve({ ...ctx, render: render! })
-      .then((ctx) =>
-        (typeof route.handler === "function"
+      .then(
+        (ctx) =>
+          (typeof route.handler === "function"
             ? route.handler
             : route.handler?.[req.method as keyof Handlers])?.(req, ctx) ??
-            req.method === "GET"
-          ? render?.()
-          : new Response(null, { status: 404 })
+            (req.method === "GET"
+              ? render?.()
+              : new Response(null, { status: 404 })),
       )
       .then((response) => response ?? Promise.reject("Missing Response"))
       .catch((err) => (console.error(err), Promise.reject(err)))
