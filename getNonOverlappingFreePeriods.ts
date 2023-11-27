@@ -52,9 +52,9 @@ export const getNonOverlappingFreePeriods = (periods: Period[]): Period[] => {
       }
       return acc;
     }, []);
-
-export default getNonOverlappingFreePeriods;    
   });
 
   return freePeriods;
 };
+
+export default getNonOverlappingFreePeriods;
