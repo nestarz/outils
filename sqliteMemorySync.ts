@@ -17,10 +17,11 @@ export interface DBWithHash {
 
 const strPrefix = (v: unknown) => `[s3lite] ${v}`;
 
-export const sqliteMemorySync = (
+export const sqliteMemorySync = async (
   get_: () => Promise<ArrayBuffer | void>,
   set: (buffer: Uint8Array) => boolean | Promise<boolean>,
   gethash?: () => Promise<string | null | undefined>,
+  acquireLock?: null | (<T>(fn: () => T) => Promise<T>),
   verbose: "info" | "error" = "info",
 ): Promise<DBWithHash> => {
   let db0: DB;
@@ -47,39 +48,50 @@ export const sqliteMemorySync = (
     get hash() {
       return hash;
     },
-    query: async <O extends RowObject>(query: string, values?: QueryParameterSet) => {
-      if (/error|info/.test(verbose)) {
-        console.log(strPrefix(query));
+    query: async <O extends RowObject>(
+      query: string,
+      values?: QueryParameterSet,
+    ) => {
+      let isMutation = false;
+      if (query.match(/BEGIN/gi)) inTransaction = true;
+      if (query.match(/ROLLBACK/gi) || query.match(/COMMIT/gi)) {
+        inTransaction = false;
       }
-      const newhash = await gethash?.().catch(() => null);
-      if (newhash !== hash || !newhash) db = await get();
-      hash = newhash;
+      if (!inTransaction) {
+        isMutation = !!query.match(
+          /DELETE|INSERT|UPDATE|CREATE|ALTER|COMMIT|DROP/gi,
+        );
+      }
 
-      if (typeof db === "undefined" || db === null) throw Error("Missing DB");
+      const render = isMutation && typeof acquireLock === "function"
+        ? acquireLock
+        : <T>(fn: () => T): T => fn();
+      return await render(async () => {
+        if (/error|info/.test(verbose)) {
+          console.log(strPrefix(query));
+        }
+        const newhash = await gethash?.().catch(() => null);
+        if (newhash !== hash || !newhash) db = await get();
+        hash = newhash;
 
-      return Promise.resolve()
-        .then(() => db?.queryEntries<O>(query, values) ?? [])
-        .then(async (res) => {
-          if (query.match(/BEGIN/gi)) inTransaction = true;
-          if (query.match(/ROLLBACK/gi) || query.match(/COMMIT/gi)) {
-            inTransaction = false;
-          }
-          if (!inTransaction) {
-            if (
-              query.match(/DELETE|INSERT|UPDATE|CREATE|ALTER|COMMIT|DROP/gi)
-            ) {
+        if (typeof db === "undefined" || db === null) throw Error("Missing DB");
+
+        return Promise.resolve()
+          .then(() => db?.queryEntries<O>(query, values) ?? [])
+          .then(async (res) => {
+            if (isMutation) {
               if (/error|info/.test(verbose)) {
                 console.log(strPrefix("saving..."));
               }
               if (db) await set(db.serialize());
             }
-          }
-          return res;
-        })
-        .catch((error) => {
-          console.error(error);
-          throw Error(strPrefix(JSON.stringify(error)));
-        });
+            return res;
+          })
+          .catch((error) => {
+            console.error(error);
+            throw Error(strPrefix(JSON.stringify(error)));
+          });
+      });
     },
   });
 };
