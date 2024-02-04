@@ -5,7 +5,7 @@ import type {
   Handlers,
 } from "https://deno.land/x/fresh@1.6.3/src/server/types.ts";
 
-export type { MiddlewareHandlerContext } from "https://deno.land/x/fresh@1.6.3/src/server/types.ts";
+export type { MiddlewareHandlerContext, FreshContext } from "https://deno.land/x/fresh@1.6.3/src/server/types.ts";
 
 type JSXElement = { type: any; props: any; key: string };
 type RequestHandler<VNode extends JSXElement = JSXElement> = (
