@@ -11,20 +11,22 @@ export type QueryFn = <O extends RowObject = RowObject>(
   values?: QueryParameter[],
 ) => Promise<Array<O>>;
 
-export type SqliteMiddlewareState<Schema> = {
+type SqliteMiddlewareState<Schema, Namespace extends string = "default"> = {
   db: { query: QueryFn };
   qb: Kysely<Schema>;
-  clientQuery: ReturnType<typeof createQueryFunction<Schema>>;
+  clientQuery: Record<Namespace, ReturnType<typeof createQueryFunction<Schema>>>
 };
 
 export const createSqliteMiddleware = <Schema,>({
   database,
   withDeserializeNestedJSON,
   afterHooks,
+  namespace,
 }: {
   database: { query: QueryFn };
   withDeserializeNestedJSON?: boolean;
   afterHooks?: Parameters<typeof createQueryFunction>[2];
+  namespace?: string;
 }) => {
   const sqliteTypes = sqliteGenTypes();
 
@@ -41,7 +43,8 @@ export const createSqliteMiddleware = <Schema,>({
         dialect: new SqliteDialect(null!),
       });
       await sqliteTypes.save((query) => dbQuery<any>(query));
-      ctx.state.clientQuery = createQueryFunction(dbQuery, qb, [
+      ctx.state.clientQuery ??= {};
+      ctx.state.clientQuery[namespace ?? "default"] = createQueryFunction(dbQuery, qb, [
         ...(withDeserializeNestedJSON ? [deserializeNestedJSON] : []),
         ...(afterHooks ?? []),
       ]);
