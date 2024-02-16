@@ -23,9 +23,10 @@ declare function cachifiedWithOptionalCache<Value>(
 export type CachifiedState = { cachified: typeof cachifiedWithOptionalCache };
 
 export const createCachifiedMiddleware = (
-  { cache: initCache, lruCacheOptions }: {
+  { cache: initCache, lruCacheOptions, cachifiedOptions }: {
     cache?: Cache;
     lruCacheOptions?: LRUCache.Options<any, any, any>;
+    cachifiedOptions?: CachifiedOptions;
   } = {},
 ) => {
   const cache = initCache ??
@@ -35,7 +36,7 @@ export const createCachifiedMiddleware = (
       ctx.state.cachified =
         ((...props: Parameters<typeof cachifiedWithOptionalCache>) =>
           cachified(
-            { ...props[0], cache: props[0]?.cache ?? cache },
+            { ...cachifiedOptions ?? {}, ...props[0], cache: props[0]?.cache ?? cache },
             ...(props.slice(1) as []),
           )) as typeof cachifiedWithOptionalCache;
       const resp = await ctx.next();
