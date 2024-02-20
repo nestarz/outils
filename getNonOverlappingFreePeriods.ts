@@ -19,6 +19,11 @@ export const getNonOverlappingFreePeriods = (periods: Period[]): Period[] => {
 
   busyPeriods.forEach((busyPeriod) => {
     freePeriods = freePeriods.reduce<Period[]>((acc, freePeriod) => {
+      const isInvalid =
+        new Date(freePeriod.start).getTime() >=
+        new Date(freePeriod.end).getTime();
+      if (isInvalid) return acc;
+
       const overlapStart = isWithinInterval(new Date(busyPeriod.start), {
         start: new Date(freePeriod.start),
         end: new Date(freePeriod.end),
