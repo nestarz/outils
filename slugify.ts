@@ -1,4 +1,4 @@
-export default (text: string | undefined) =>
+export const slugify = (text: string | undefined): string | undefined =>
   text
     ?.toString()
     ?.normalize("NFD")
@@ -8,3 +8,5 @@ export default (text: string | undefined) =>
     ?.replace(/\s+/g, "-")
     ?.replace(/[^\w-]+/g, "")
     ?.replace(/--+/g, "-");
+
+export default slugify;

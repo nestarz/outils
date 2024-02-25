@@ -1,6 +1,6 @@
-const join = (...args: string[]): string => args.join("_");
+const join = (...args: string[]) => args.join("_");
 
-const snakeToPascal = (input: string): string =>
+const snakeToPascal = (input: string) =>
   input
     .split("_")
     .reduce(
@@ -11,7 +11,7 @@ const snakeToPascal = (input: string): string =>
 
 type Column = { column_name: string; data_type: string; is_nullable: boolean };
 
-const generateInterface = (name: string, columns: Column[]): string =>
+const generateInterface = (name: string, columns: Column[]) =>
   `export interface ${snakeToPascal(name)} {\n${columns
     .map(
       ({ column_name, is_nullable, data_type }) =>
@@ -27,7 +27,7 @@ export interface Schema {
 export const genTypes = (
   dialectToTypescriptTypes: Record<string, string>,
   schemas: Schema[]
-): string => {
+) => {
   const tsFileContent = `type JSONValue =
   | string
   | number
@@ -75,37 +75,32 @@ export const genTypes = (
     .concat("\n");
 };
 
-export interface GenerateDatabaseTypesConfig {
+export interface CreateTypes {
   filename: string;
   getRows: <T>(value: T) => Schema[] | undefined;
   getStructure: () => string;
   dialectToTypescriptTypes: Record<string, string>;
 }
 
-type Fn = (
-  query: string
-) => Schema[] | Promise<Schema[] | undefined> | undefined;
-
-export type DatabaseType = {
-  get: (fn: Fn) => Promise<string>;
-  save: (fn: Fn) => Promise<void>;
-};
-
-export const generateDatabaseTypes = ({
+export const createTypes = ({
   filename = "types.db.d.ts",
-  getRows = (v) => v as ReturnType<GenerateDatabaseTypesConfig["getRows"]>,
+  getRows = (v) => v as ReturnType<CreateTypes["getRows"]>,
   getStructure,
   dialectToTypescriptTypes,
-}: GenerateDatabaseTypesConfig): DatabaseType => {
+}: CreateTypes) => {
   let fetchedTypes = false;
-  const get = (fn: Fn) =>
+  const get = (
+    fn: (
+      query: string
+    ) => ReturnType<typeof getRows> | Promise<ReturnType<typeof getRows>>
+  ) =>
     Promise.resolve(fn(getStructure())).then((results) =>
       genTypes(dialectToTypescriptTypes, getRows(results) as any)
     );
 
   return {
     get,
-    save: async (fn) => {
+    save: async (fn: Parameters<typeof get>[0]) => {
       const withWriteAccess = await Deno.permissions
         .query({ name: "write", path: Deno.cwd() })
         .then((d) => d.state === "granted");
@@ -127,4 +122,4 @@ export const generateDatabaseTypes = ({
   };
 };
 
-export default generateDatabaseTypes;
+export default createTypes;

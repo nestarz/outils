@@ -1,4 +1,4 @@
-import qs, { IStringifyOptions } from 'https://esm.sh/qs@6.11.2';
+import qs, { IStringifyOptions } from 'qs';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ParamMap = Record<string, any>;
@@ -121,7 +121,12 @@ export default function urlcat(
  * configure({arrayFormat: 'brackets', objectFormat: {format: 'RFC1738'}})
  * ```
  */
-export function configure(rootConfig: UrlCatConfiguration) {
+export function configure(rootConfig: UrlCatConfiguration): (
+    baseUrlOrTemplate: string, 
+    pathTemplateOrParams: string | ParamMap, 
+    maybeParams?: ParamMap, 
+    config?: UrlCatConfiguration
+  ) => string {
   return (
     baseUrlOrTemplate: string,
     pathTemplateOrParams: string | ParamMap,

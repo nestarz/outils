@@ -1,10 +1,14 @@
-const document =
-  globalThis.document ??
-  (await import("https://esm.sh/linkedom@0.15.1").then(
-    (linkedom) => linkedom.parseHTML().document
-  ));
+const getDocument: () => Document = await (async () => {
+  const document =
+    (globalThis.document as Document) ??
+    (await import("linkedom").then(
+      (linkedom) => linkedom.parseHTML("").document
+    ));
 
-export const convertToPlain = (obj: any) => {
+  return () => document;
+})();
+
+export const convertToPlain = (obj: any): string | null => {
   const innerHTML =
     typeof obj === "string"
       ? obj
@@ -12,7 +16,7 @@ export const convertToPlain = (obj: any) => {
       ? JSON.stringify(obj)
       : null;
   return typeof innerHTML === "string" && innerHTML?.trim()
-    ? Object.assign(document.createElement("fragment"), {
+    ? Object.assign(getDocument().createElement("fragment"), {
         innerHTML,
       }).textContent
     : "";

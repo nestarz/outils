@@ -1,29 +1,29 @@
-import type { MiddlewareHandler, RouteConfig } from "https://deno.land/x/fresh@1.5.2/server.ts";
-import { storeFunctionExecution } from "https://deno.land/x/scripted@0.0.3/mod.ts";
+import { storeFunctionExecution } from "scripted";
+import type { RouteConfig } from "./createRenderPipe.ts";
+import type { MiddlewareHandler } from "./fresh/middleware.ts";
 
-export const config: RouteConfig = {
+export const config: RouteConfig["config"] = {
   routeOverride: "/_hmr",
 };
 
-const withWritePermission =
-  (await Deno.permissions.query({ name: "write", path: Deno.cwd() }))
-    .state === "granted";
+const withWritePermission: boolean =
+  (await Deno.permissions.query({ name: "write", path: Deno.cwd() })).state ===
+  "granted";
 
 export const middleware: MiddlewareHandler = (_req, ctx) => {
   if (withWritePermission) {
     storeFunctionExecution(() => {
-      new EventSource("/_hmr").addEventListener(
-        "message",
-        () => globalThis.location?.reload(),
+      new EventSource("/_hmr").addEventListener("message", () =>
+        globalThis.location?.reload()
       );
     });
   }
   return ctx.next();
 };
 
-export const createHandler = (
-  { hmrEventName }: { hmrEventName?: string } = {},
-) => {
+export const createHandler = ({
+  hmrEventName,
+}: { hmrEventName?: string } = {}): (() => Response) => {
   const hmrCallbacks: Map<number, () => void> = new Map();
   globalThis.addEventListener(hmrEventName ?? "hmr", () => {
     [...hmrCallbacks.values()].forEach((fn) => fn());

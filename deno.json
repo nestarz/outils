@@ -1,0 +1,41 @@
+{
+  "name": "@bureaudouble/outils",
+  "version": "0.0.12",
+  "compilerOptions": {
+    "lib": ["es6", "dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
+  },
+  "exclude": [".*", "dist"],
+  "imports": {
+    "clsx": "npm:clsx@2.1.0",
+    "tailwind-merge": "npm:tailwind-merge@2.2.1",
+    "@std/fs/": "jsr:/@std/fs@0.216/",
+    "@preact/signals": "npm:@preact/signals@1.2.2",
+    "qs": "npm:qs@6.11.2",
+    "linkedom": "npm:linkedom@0.16.8",
+    "kysely": "npm:kysely@0.27.2",
+    "mrmime": "npm:mrmime@2.0.0",
+    "scripted": "jsr:@bureaudouble/scripted@0.0.2"
+  },
+  "exports": {
+    "./cn.ts": "./cn.ts",
+    "./shadcn.ts": "./shadcn.ts",
+    "./createRenderPipe.ts": "./createRenderPipe.ts",
+    "./unique.ts": "./unique.ts",
+    "./slugify.ts": "./slugify.ts",
+    "./urlcat.ts": "./urlcat.ts",
+    "./cors.ts": "./cors.ts",
+    "./convertToPlain.ts": "./convertToPlain.ts",
+    "./deserializeNestedJSON.ts": "./deserializeNestedJSON.ts",
+    "./createBasicAuth.ts": "./createBasicAuth.ts",
+    "./hmr.ts": "./hmr.ts",
+    "./staticFileRoute.ts": "./staticFileRoute.ts",
+    "./toArray.ts": "./toArray.ts",
+    "./fresh/middleware.ts": "./fresh/middleware.ts",
+    "./fresh/adaptFreshPlugin.ts": "./fresh/adaptFreshPlugin.ts",
+    "./database/generateDatabaseTypes.ts": "./database/generateDatabaseTypes.ts",
+    "./database/sqlite/createQueryFunction.ts": "./database/sqlite/createQueryFunction.ts",
+    "./database/sqlite/memorySync.ts": "./database/sqlite/memorySync.ts",
+    "./database/sqlite/createMiddleware.ts": "./database/sqlite/createMiddleware.ts",
+    "./database/sqlite/generateTypes.ts": "./database/sqlite/generateTypes.ts"
+  }
+}

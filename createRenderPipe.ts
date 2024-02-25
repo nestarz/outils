@@ -1,16 +1,81 @@
-import type {
-  AsyncLayout,
-  Handler,
-  HandlerContext,
-  Handlers,
-} from "https://deno.land/x/fresh@1.6.3/src/server/types.ts";
+import type { Plugin } from "./fresh/adaptFreshPlugin.ts";
 
-export type { MiddlewareHandlerContext, FreshContext } from "https://deno.land/x/fresh@1.6.3/src/server/types.ts";
+// TODO:
+type RenderFunction = Function;
+type RouterOptions = any;
+type ComponentType<T = any> = any;
+type ComponentChildren<T = any> = any;
+//
 
-type JSXElement = { type: any; props: any; key: string };
+// deno-lint-ignore no-namespace
+export namespace router {
+  export const knownMethods = [
+    "GET",
+    "HEAD",
+    "POST",
+    "PUT",
+    "DELETE",
+    "OPTIONS",
+    "PATCH",
+  ] as const;
+
+  export type DestinationKind = "internal" | "static" | "route" | "notFound";
+  export type KnownMethod = (typeof knownMethods)[number];
+}
+
+// deno-lint-ignore no-empty-interface
+export interface RenderOptions extends ResponseInit {}
+
+export interface ResolvedFreshConfig {
+  dev: boolean;
+  build: {
+    outDir: string;
+    target: string | string[];
+  };
+  render: RenderFunction;
+  plugins: Plugin[];
+  staticDir: string;
+  router?: RouterOptions;
+  server: Partial<Deno.ServeTlsOptions>;
+  basePath: string;
+}
+
+export interface FreshContext<
+  State = Record<string, unknown>,
+  // deno-lint-ignore no-explicit-any
+  Data = any,
+> {
+  remoteAddr: Deno.NetAddr;
+  url: URL;
+  params: Record<string, string>;
+  state: State;
+  data: Data;
+  render: (
+    data?: Data,
+    options?: RenderOptions,
+  ) => Response | Promise<Response>;
+  Component: ComponentType<unknown>;
+  next: () => Promise<Response>;
+}
+
+export type AsyncLayout<T = any, S = Record<string, unknown>> = (
+  req: Request,
+  ctx: FreshContext<S, T>,
+) => Promise<ComponentChildren | Response>;
+
+export type Handler<T = any, State = Record<string, unknown>> = (
+  req: Request,
+  ctx: FreshContext<State, T>,
+) => Response | Promise<Response>;
+
+export type Handlers<T = any, State = Record<string, unknown>> = {
+  [K in router.KnownMethod]?: Handler<T, State>;
+};
+
+type JSXElement = { type: any; props: any; key?: string | null };
 type RequestHandler<VNode extends JSXElement = JSXElement> = (
   req: Request,
-  ctx: HandlerContext<any, any>,
+  ctx: FreshContext<any, any>,
 ) => Promise<VNode | Response>;
 type PropHandler<VNode extends JSXElement = JSXElement> = (
   props: Record<string, unknown>,
@@ -21,7 +86,25 @@ export type RouteConfig<VNode extends JSXElement = JSXElement> = {
   config?: { routeOverride?: string };
 };
 
-export const createRenderPipe =
+export type RenderPipe = <VNode extends JSXElement>(
+  virtualNodePipe: (
+    vn: VNode,
+  ) => Promise<BodyInit | null | undefined | Response>,
+) => (
+  route: RouteConfig<VNode>,
+  config?: {
+    responseInit?: ResponseInit;
+    Layout?: {
+      default: AsyncLayout<any, any>;
+    };
+  },
+) => (
+  req: Request,
+  rawCtx: FreshContext,
+  matcher?: Record<string, string>,
+) => Promise<Response>;
+
+export const createRenderPipe: RenderPipe =
   // deno-lint-ignore no-explicit-any
   <VNode extends JSXElement>(
     virtualNodePipe: (
@@ -36,9 +119,9 @@ export const createRenderPipe =
       Layout?: { default: AsyncLayout<any, any> };
     },
   ) =>
-  (
+  async <State = Record<string, unknown>>(
     req: Request,
-    rawCtx: HandlerContext,
+    rawCtx: FreshContext<State>,
     matcher?: Record<string, string>,
   ) => {
     const url = new URL(req.url);
@@ -80,7 +163,7 @@ export const createRenderPipe =
         )
       : undefined;
 
-    return Promise.resolve({ ...ctx, render: render! })
+    return await Promise.resolve({ ...ctx, render: render! })
       .then(
         (ctx) =>
           (typeof route.handler === "function"

@@ -1,13 +1,17 @@
-import type { RouteConfig } from "https://deno.land/x/fresh@1.4.2/server.ts";
-import { lookup } from "https://deno.land/x/mrmime@v1.0.1/mod.ts";
+import type { RouteConfig } from "./createRenderPipe.ts";
+import { lookup } from "mrmime";
 
-export const config: RouteConfig = {
+export const config: RouteConfig["config"] = {
   routeOverride: "GET@/static/*",
 };
 
 export const createHandler =
-  (options: { baseUrl: string; headers?: HeadersInit; prefix?: string }) =>
-  async (req: Request) => {
+  (options: {
+    baseUrl: string;
+    headers?: HeadersInit;
+    prefix?: string;
+  }): ((req: Request) => Promise<Response>) =>
+  async (req) => {
     const url = new URL(
       "." +
         decodeURIComponent(new URL(req.url).pathname).slice(
