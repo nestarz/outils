@@ -50,20 +50,31 @@ function basicAuth(
   });
 }
 
-type BasicAuth = <T extends Request, U extends { next?: Function }, V>(
-  fn: (arg1: T, arg2: U) => V
-) => (req: T, ctx: U) => Response | V;
-
 // mod.ts
-export const createBasicAuth =
-  (username: string, password: string, realm = "access"): BasicAuth =>
-  (fn = (_req, ctx) => ctx?.next?.()) =>
-  (req, ctx) => {
-    const unauthorized =
-      username && password
-        ? basicAuth(req, realm, { [username]: password })
-        : null;
-    return unauthorized ?? fn(req, ctx);
-  };
+import type { Plugin } from "./types.ts";
 
-export default createBasicAuth;
+export const createBasicAuthPlugin = (
+  username: string,
+  password: string,
+  realm = "access"
+): Plugin => {
+  return {
+    name: "basicAuthPlugin",
+    middlewares: [
+      {
+        path: "/",
+        middleware: {
+          handler: (req, ctx) => {
+            const unauthorized =
+              username && password
+                ? basicAuth(req, realm, { [username]: password })
+                : null;
+            return unauthorized ?? ctx.next();
+          },
+        },
+      },
+    ],
+  };
+};
+
+export default createBasicAuthPlugin;
