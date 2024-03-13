@@ -1,8 +1,7 @@
 const getDocument: () => Document = await (async () => {
-  const document =
-    (globalThis.document as Document) ??
-    (await import("linkedom").then(
-      (linkedom) => linkedom.parseHTML("").document
+  const document = (globalThis.document as Document) ??
+    (await import("@bureaudouble/deno-dom").then(
+      ({ DOMParser }) => new DOMParser().parseFromString("", "text/html"),
     ));
 
   return () => document;

@@ -24,25 +24,27 @@ export interface DBWithHash<T> {
 
 const strPrefix = (v: unknown): string => `[s3lite] ${v}`;
 
-export declare class SimpleDatabase {
-  constructor(path?: string, options?: {
-      mode?: "read" | "write" | "create";
-      memory?: boolean;
-      uri?: boolean;
-  });
+export interface Database {
   close(): void;
   deserialize(arg: Uint8Array): any;
   serialize(): Uint8Array;
   queryEntries<O extends RowObject = RowObject>(
-      sql: string, 
-      params?: QueryParameterSet,
+    sql: string,
+    params?: QueryParameterSet,
   ): Array<O>;
 }
 
-export const sqliteMemorySync = async <
-  DB extends SimpleDatabase,
->(
-  Database: DB,
+export type DatabaseCreator<DB extends Database> = (
+  path?: string,
+  options?: {
+    mode?: "read" | "write" | "create";
+    memory?: boolean;
+    uri?: boolean;
+  },
+) => DB;
+
+export const sqliteMemorySync = async <DB extends Database>(
+  createDatabase: DatabaseCreator<DB>,
   get_: () => Promise<ArrayBuffer | void>,
   set: (buffer: Uint8Array) => boolean | Promise<boolean>,
   gethash?: () => Promise<string | null | undefined>,
@@ -56,7 +58,7 @@ export const sqliteMemorySync = async <
       if (/error|info/.test(verbose)) console.log(strPrefix("close"));
       db0.close();
     }
-    db0 = new (Database as DB as any)("", { memory: true });
+    db0 = createDatabase("", { memory: true });
     if (/error|info/.test(verbose)) console.log(strPrefix("open"));
     if (buffer) db0.deserialize(new Uint8Array(buffer));
     return db0;

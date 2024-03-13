@@ -23,7 +23,7 @@ export const composeMiddlewares = (
 ): (req: Request, ctx: FreshContext) => Promise<Response> => {
   return async (req, ctx) => {
     const handlers: (() => Response | Promise<Response>)[] = [];
-    ctx.next = () => {
+    ctx.next = async () => {
       const handler = handlers.shift()!;
       try {
         // As the `handler` can be either sync or async, depending on the user's code,
@@ -35,7 +35,8 @@ export const composeMiddlewares = (
         // Because of that, we need to make sure that the produced value is pushed
         // through the pipeline only if function was called successfully, and handle
         // the error case manually, by returning the `Error` as rejected promise.
-        return Promise.resolve(handler());
+        const result = await handler();
+        return Promise.resolve(result);
       } catch (e) {
         if (e instanceof Deno.errors.NotFound) {
           return Promise.resolve(new Response(null, { status: 500 }));
@@ -60,6 +61,9 @@ export const composeMiddlewares = (
       }
     }
 
-    return await ctx.next().catch(() => new Response(null, { status: 500 }));
+    return await ctx.next().catch((err) => {
+      console.error(err);
+      return new Response(null, { status: 500 });
+    });
   };
 };

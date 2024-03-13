@@ -22,6 +22,7 @@ interface SqliteMiddlewareConfig<Namespace extends string = "default"> {
   withDeserializeNestedJSON?: boolean;
   afterHooks?: Parameters<typeof createQueryFunction>[2];
   namespace?: Namespace;
+  disableWritingTypes?: boolean;
 }
 
 export const createSqlitePlugin = <
@@ -32,12 +33,13 @@ export const createSqlitePlugin = <
   withDeserializeNestedJSON,
   afterHooks,
   namespace,
+  disableWritingTypes,
 }: SqliteMiddlewareConfig<Namespace>): Plugin<
   SqliteMiddlewareState<Schema, Namespace>
 > => {
-  const sqliteTypes = sqliteGenTypes({
-    filename: `${namespace ?? "default"}.sqlite.d.ts`,
-  });
+  const sqliteTypes = !disableWritingTypes
+    ? sqliteGenTypes({ filename: `${namespace ?? "default"}.sqlite.d.ts` })
+    : null;
 
   return {
     name: "sqliteMiddlewarePlugin",
@@ -53,7 +55,7 @@ export const createSqlitePlugin = <
             const qb = new Kysely<Schema>({
               dialect: new SqliteDialect(null!),
             });
-            await sqliteTypes.save((query) => dbQuery<any>(query));
+            await sqliteTypes?.save((query) => dbQuery<any>(query));
             const key = (namespace ?? "default") as Namespace;
             const value = createQueryFunction(dbQuery, qb, [
               ...(withDeserializeNestedJSON ? [deserializeNestedJSON] : []),

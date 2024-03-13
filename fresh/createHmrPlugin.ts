@@ -1,10 +1,15 @@
-import { storeFunctionExecution } from "@bureaudouble/scripted";
 import type { Plugin } from "./types.ts";
+import { storeFunctionExecution } from "@bureaudouble/scripted";
+import { join } from "@std/path/join";
 
 export const createHmrPlugin = async (
-  { hmrEventName, path = "/_hmr" }: { hmrEventName?: string; path: string } = {
-    path: "/_hmr",
-  }
+  { hmrEventName, basePath, path = "/__hmr" }: {
+    hmrEventName?: string;
+    basePath?: string;
+    path: string;
+  } = {
+    path: "/__hmr",
+  },
 ): Promise<Plugin> => {
   const withWritePermission: boolean =
     (await Deno.permissions.query({ name: "write", path: Deno.cwd() }))
@@ -24,11 +29,32 @@ export const createHmrPlugin = async (
         middleware: {
           handler: (_req, ctx) => {
             if (withWritePermission) {
-              storeFunctionExecution(() => {
-                new EventSource(path).addEventListener("message", () =>
-                  globalThis.location?.reload()
-                );
-              });
+              storeFunctionExecution((path: string) => {
+                let eventSource: EventSource;
+                const connect = () => {
+                  eventSource = new EventSource(path);
+                  eventSource.addEventListener(
+                    "error",
+                    () => eventSource.close(),
+                  );
+                  eventSource.addEventListener(
+                    "message",
+                    () => globalThis.location?.reload(),
+                  );
+                };
+                connect();
+                let reconnecting = false;
+                setInterval(() => {
+                  if (eventSource?.readyState == EventSource.CLOSED) {
+                    reconnecting = true;
+                    console.log("[hmr] reconnecting...");
+                    connect();
+                  } else if (reconnecting) {
+                    reconnecting = false;
+                    console.log("[hmr] reconnected!");
+                  }
+                }, 3000);
+              }, join(basePath ?? "", path));
             }
             return ctx.next();
           },

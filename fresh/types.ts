@@ -1,7 +1,7 @@
 export interface FreshContext<
   State = Record<string, unknown>,
   // deno-lint-ignore no-explicit-any
-  Data = any
+  Data = any,
 > {
   remoteAddr: Deno.NetAddr;
   url: URL;
@@ -11,7 +11,7 @@ export interface FreshContext<
   data: Data;
   render: (
     data?: Data,
-    options?: RenderOptions
+    options?: RenderOptions,
   ) => Response | Promise<Response>;
   Component: ComponentType<unknown>;
   next: () => Promise<Response>;
@@ -19,7 +19,7 @@ export interface FreshContext<
 
 export type MiddlewareHandler<State = Record<string, unknown>> = (
   req: Request,
-  ctx: FreshContext<State>
+  ctx: FreshContext<State>,
 ) => Response | Promise<Response>;
 
 export interface Middleware<State = Record<string, unknown>> {
@@ -40,7 +40,7 @@ export interface PluginMiddleware<State = Record<string, unknown>> {
 
 export type FinalHandler = (
   req: Request,
-  ctx: FreshContext
+  ctx: FreshContext,
 ) => {
   handler: () => Response | Promise<Response>;
 };
@@ -66,7 +66,7 @@ export interface Plugin<State = Record<string, unknown>> {
   middlewares?: PluginMiddleware<State>[];
 
   transformEnd?: (
-    stream: ReadableStream | string
+    stream: ReadableStream | string,
   ) => (ReadableStream | string) | Promise<ReadableStream | string>;
 }
 
@@ -112,12 +112,12 @@ export interface ResolvedFreshConfig {
 
 export type AsyncLayout<T = any, S = Record<string, unknown>> = (
   req: Request,
-  ctx: FreshContext<S, T>
+  ctx: FreshContext<S, T>,
 ) => Promise<ComponentChildren | Response>;
 
 export type Handler<T = any, State = Record<string, unknown>> = (
   req: Request,
-  ctx: FreshContext<State, T>
+  ctx: FreshContext<State, T>,
 ) => Response | Promise<Response>;
 
 export type Handlers<T = any, State = Record<string, unknown>> = {
@@ -145,7 +145,7 @@ export interface Route<Data = any> {
 
 export type AsyncRoute<T = any, S = Record<string, unknown>> = (
   req: Request,
-  ctx: FreshContext<S, T>
+  ctx: FreshContext<S, T>,
 ) => Promise<ComponentChildren | Response>;
 
 export type PageProps<T = any, S = Record<string, unknown>> = Omit<
@@ -153,7 +153,11 @@ export type PageProps<T = any, S = Record<string, unknown>> = Omit<
   "render" | "next" | "renderNotFound"
 >;
 
-export type VNode<T = any> = { type: T; props: any; key?: string | null };
+export type VNode<T = any> = {
+  type: T;
+  props: any;
+  key?: string | null | number | symbol;
+};
 
 export type PageComponent<T = any, S = Record<string, unknown>> =
   | ComponentType<PageProps<T, S>>
@@ -171,11 +175,11 @@ export interface RouteModule {
 
 export type RequestHandler<JSXElement extends VNode = VNode> = (
   req: Request,
-  ctx: FreshContext<any, any>
+  ctx: FreshContext<any, any>,
 ) => Promise<JSXElement | Response>;
 
 export type PropHandler<JSXElement extends VNode = VNode> = (
-  props: Record<string, unknown>
+  props: Record<string, unknown>,
 ) => Promise<JSXElement | Response>;
 
 export type RenderPipe = <JSXElement extends VNode>(options: {
@@ -184,7 +188,7 @@ export type RenderPipe = <JSXElement extends VNode>(options: {
     default: AsyncLayout<any, any>;
   };
   virtualNodePipe: (
-    vn: JSXElement
+    vn: JSXElement,
   ) => Promise<BodyInit | null | undefined | Response>;
 }) => (route: Route) => {
   handler: (req: Request, ctx: FreshContext) => Promise<Response>;

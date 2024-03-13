@@ -1,9 +1,6 @@
-import qs, { IStringifyOptions } from 'qs';
-
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type ParamMap = Record<string, any>;
-export type UrlCatConfiguration =
-  Partial<Pick<IStringifyOptions, 'arrayFormat'> & { objectFormat: Partial<Pick<IStringifyOptions, 'format'>> }>
+export type UrlCatConfiguration = any;
 
 /**
  * Builds a URL using the base template and specified parameters.
@@ -95,17 +92,16 @@ export default function urlcat(
   baseUrlOrTemplate: string,
   pathTemplateOrParams: string | ParamMap,
   maybeParams: ParamMap = {},
-  config: UrlCatConfiguration = {}
 ): string {
   if (typeof pathTemplateOrParams === 'string') {
     const baseUrl = baseUrlOrTemplate;
     const pathTemplate = pathTemplateOrParams;
     const params = maybeParams;
-    return urlcatImpl(pathTemplate, params, baseUrl, config);
+    return urlcatImpl(pathTemplate, params, baseUrl);
   } else {
     const baseTemplate = baseUrlOrTemplate;
     const params = pathTemplateOrParams;
-    return urlcatImpl(baseTemplate, params, undefined, config);
+    return urlcatImpl(baseTemplate, params, undefined);
   }
 }
 
@@ -147,11 +143,10 @@ function urlcatImpl(
   pathTemplate: string,
   params: ParamMap,
   baseUrl: string | undefined,
-  config: UrlCatConfiguration
 ) {
   const { renderedPath, remainingParams } = path(pathTemplate, params);
   const cleanParams = removeNullOrUndef(remainingParams);
-  const renderedQuery = query(cleanParams, config);
+  const renderedQuery = query(cleanParams);
   const pathAndQuery = preparePathAndQuery(renderedPath, renderedQuery);
 
   return baseUrl ? joinFullUrl(renderedPath, baseUrl, pathAndQuery) : pathAndQuery;
@@ -171,7 +166,7 @@ function urlcatImpl(
  * // -> 'id=42&search=foo'
  * ```
  */
-export function query(params: ParamMap, config?: UrlCatConfiguration): string {
+export function query(params: ParamMap): string {
   /* NOTE: Handle quirk of `new UrlSearchParams(params).toString()` in Webkit 602.x.xx
    *       versions which returns stringified object when params is empty object
    */
@@ -179,12 +174,8 @@ export function query(params: ParamMap, config?: UrlCatConfiguration): string {
     return ''
   }
 
-  const qsConfiguration: IStringifyOptions = {
-    format: config?.objectFormat?.format ?? 'RFC1738', // RDC1738 is urlcat's current default. Breaking change if default is changed
-    arrayFormat: config?.arrayFormat
-  }
 
-  return qs.stringify(params, qsConfiguration);
+  return new URLSearchParams(params).toString();
 }
 
 /**

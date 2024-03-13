@@ -1,6 +1,6 @@
 {
   "name": "@bureaudouble/outils",
-  "version": "0.0.15",
+  "version": "0.0.33",
   "compilerOptions": {
     "lib": ["es6", "dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
   },
@@ -10,17 +10,16 @@
     "tailwind-merge": "npm:tailwind-merge@2.2.1",
     "@std/fs/": "jsr:/@std/fs@0.216/",
     "@preact/signals": "npm:@preact/signals@1.2.2",
-    "qs": "npm:qs@6.11.2",
     "linkedom": "npm:linkedom@0.16.8",
     "kysely": "npm:kysely@0.27.2",
     "mrmime": "npm:mrmime@2.0.0",
     "@bureaudouble/scripted": "jsr:@bureaudouble/scripted@0.0.2",
-
     "@std/path/": "jsr:/@std/path@0.216/",
     "tailwindcss": "npm:tailwindcss@^3.2.4",
     "autoprefixer": "npm:autoprefixer@10.4.17",
     "postcss": "npm:postcss@8.4.33",
-    "cssnano": "npm:cssnano@6.0.3"
+    "cssnano": "npm:cssnano@6.0.3",
+    "@bureaudouble/deno-dom": "jsr:@bureaudouble/deno-dom@0.1.38"
   },
   "exports": {
     "./cn.ts": "./cn.ts",
@@ -32,15 +31,18 @@
     "./deserializeNestedJSON.ts": "./deserializeNestedJSON.ts",
     "./toArray.ts": "./toArray.ts",
     "./fresh/types.ts": "./fresh/types.ts",
+    "./fresh/createPartial.ts": "./fresh/createPartial.ts",
     "./fresh/createHmrPlugin.ts": "./fresh/createHmrPlugin.ts",
     "./fresh/createCorsPlugin.ts": "./fresh/createCorsPlugin.ts",
     "./fresh/createStaticFilePlugin.ts": "./fresh/createStaticFilePlugin.ts",
     "./fresh/createBasicAuthPlugin.ts": "./fresh/createBasicAuthPlugin.ts",
+    "./fresh/createCachifiedPlugin.ts": "./fresh/createCachifiedPlugin.ts",
     "./fresh/createRenderPipe.ts": "./fresh/createRenderPipe.ts",
     "./fresh/composeMiddlewares.ts": "./fresh/composeMiddlewares.ts",
     "./fresh/composeRoutes.ts": "./fresh/composeRoutes.ts",
     "./fresh/createTailwindPlugin.ts": "./fresh/createTailwindPlugin.ts",
     "./database/generateDatabaseTypes.ts": "./database/generateDatabaseTypes.ts",
+    "./database/sqlite/createSqliteFromS3.ts": "./database/sqlite/createSqliteFromS3.ts",
     "./database/sqlite/createQueryFunction.ts": "./database/sqlite/createQueryFunction.ts",
     "./database/sqlite/memorySync.ts": "./database/sqlite/memorySync.ts",
     "./database/sqlite/createSqlitePlugin.ts": "./database/sqlite/createSqlitePlugin.ts",

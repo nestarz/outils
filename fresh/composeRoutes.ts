@@ -1,6 +1,5 @@
 import { composeMiddlewares } from "./composeMiddlewares.ts";
 import type {
-  AsyncLayout,
   FreshContext,
   MiddlewareModule,
   PluginMiddleware,
@@ -8,6 +7,7 @@ import type {
   RenderPipe,
   Route,
   RouteModule,
+  router,
 } from "./types.ts";
 
 type NestedArray<T> = (T | T[])[];
@@ -43,49 +43,62 @@ const normalize = (
   } as Route;
 };
 
-export const composeRoutes = (options: {
-  routes: NestedArray<RouteModule | PluginRoute | null | undefined>;
-  middlewares?: NestedArray<
-    PluginMiddleware<any> | MiddlewareModule<any> | null | undefined
-  >;
-  renderer?: ReturnType<RenderPipe>;
-}): rutt.Routes => {
-  const createContext = (
-    req: Request,
-    connInfo: Deno.ServeHandlerInfo,
-    params: Record<string, string>,
-    route: Route,
-  ): FreshContext => {
-    const url = new URL(req.url);
-    return {
-      url,
-      params,
-      route: route.pattern,
-      remoteAddr: connInfo.remoteAddr,
-      state: {},
-      render: () => new Response(null, { status: 404 }),
-      // deno-lint-ignore no-explicit-any
-      Component: () => null as any,
-      data: undefined,
-      next: () => Promise.resolve(new Response(null, { status: 500 })),
-    };
+export const defaultRenderer = (route: Route): MiddlewareModule => ({
+  name: "defaultRenderer",
+  handler: (req, ctx) =>
+    typeof route.handler === "function"
+      ? route.handler(req, ctx)
+      : route.handler?.[req.method as router.KnownMethod]?.(req, ctx) ??
+        new Response(null, { status: 404 }),
+});
+
+export const initFreshContext = (
+  req: Request,
+  connInfo: Deno.ServeHandlerInfo,
+  params: Record<string, string>,
+  route: Route,
+): FreshContext => {
+  const url = new URL(req.url);
+  return {
+    url,
+    params,
+    route: route.pattern,
+    remoteAddr: connInfo.remoteAddr,
+    state: {},
+    render: () => new Response(null, { status: 404 }),
+    // deno-lint-ignore no-explicit-any
+    Component: () => null as any,
+    data: undefined,
+    next: () => Promise.resolve(new Response(null, { status: 500 })),
   };
+};
 
+export const composeRoutes = (
+  optionsArray: {
+    routes?: NestedArray<RouteModule | PluginRoute | null | undefined>;
+    middlewares?: NestedArray<
+      PluginMiddleware<any> | MiddlewareModule<any> | null | undefined
+    >;
+    renderer?: ReturnType<RenderPipe>;
+  }[],
+): rutt.Routes => {
   const finalRoutes: rutt.Routes = {};
-  for (const route of options.routes.flat().map(normalize)) {
-    if (!route) continue;
+  for (const options of optionsArray) {
+    for (const route of (options.routes ?? []).flat().map(normalize)) {
+      if (!route) continue;
 
-    finalRoutes[route.pattern] = {
-      [route.pattern]: (req, ctx, matcher) => {
-        return composeMiddlewares([
-          ...(options.middlewares ?? []),
-          options.renderer?.(route),
-        ])(
-          req,
-          createContext(req, ctx, matcher, route),
-        );
-      },
-    };
+      finalRoutes[route.pattern] = (req, ctx, matcher) => {
+        try {
+          return composeMiddlewares([
+            ...(options.middlewares ?? []),
+            options.renderer?.(route) ?? defaultRenderer(route),
+          ])(req, initFreshContext(req, ctx, matcher, route));
+        } catch (error) {
+          console.error(error);
+          return new Response(null, { status: 500 });
+        }
+      };
+    }
   }
 
   return finalRoutes;
