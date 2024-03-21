@@ -17,7 +17,7 @@ export type SqliteMiddlewareState<
   clientQuery: Record<Namespace, QueryFunction<Schema>>;
 };
 
-interface SqliteMiddlewareConfig<Namespace extends string = "default"> {
+export interface SqliteMiddlewareConfig<Namespace extends string = "default"> {
   getDatabase: () => Promise<{ query: QueryFn }>;
   withDeserializeNestedJSON?: boolean;
   afterHooks?: Parameters<typeof createQueryFunction>[2];
