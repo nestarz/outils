@@ -50,6 +50,7 @@ export const sqliteMemorySync = async <DB extends Database>(
   gethash?: () => Promise<string | null | undefined>,
   acquireLock?: null | (<T>(fn: () => T) => Promise<T>),
   verbose: "info" | "error" = "info",
+  ttl = 1000 * 60 * 5,
 ): Promise<DBWithHash<DB>> => {
   let db0: DB;
   const get = async () => {
@@ -68,6 +69,8 @@ export const sqliteMemorySync = async <DB extends Database>(
   let db: DB | null;
 
   let inTransaction = false;
+  let renewLeasePromise: Promise<void> = Promise.resolve();
+  let updatedAt: number = 0;
   return await Promise.resolve({
     get _db() {
       return db;
@@ -97,9 +100,18 @@ export const sqliteMemorySync = async <DB extends Database>(
         if (/error|info/.test(verbose)) {
           console.log(strPrefix(query));
         }
-        const newhash = await gethash?.().catch(() => null);
-        if (newhash !== hash || !newhash) db = await get();
-        hash = newhash;
+
+        const renewLease: () => Promise<void> = async () => {
+          const newhash = await gethash?.().catch(() => null);
+          if (newhash !== hash || !newhash) db = await get();
+          hash = newhash;
+          updatedAt = new Date().getTime();
+        };
+
+        const rotten = updatedAt + ttl < new Date().getTime();
+        if (isMutation || rotten) await renewLeasePromise;
+        renewLeasePromise = renewLease();
+        if (isMutation || rotten) await renewLeasePromise;
 
         if (typeof db === "undefined" || db === null) throw Error("Missing DB");
 
