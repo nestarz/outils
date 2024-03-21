@@ -18,7 +18,7 @@ export type SqliteMiddlewareState<
 };
 
 interface SqliteMiddlewareConfig<Namespace extends string = "default"> {
-  database: { query: QueryFn };
+  getDatabase: () => Promise<{ query: QueryFn }>;
   withDeserializeNestedJSON?: boolean;
   afterHooks?: Parameters<typeof createQueryFunction>[2];
   namespace?: Namespace;
@@ -29,7 +29,7 @@ export const createSqlitePlugin = <
   Schema,
   Namespace extends string = "default",
 >({
-  database,
+  getDatabase,
   withDeserializeNestedJSON,
   afterHooks,
   namespace,
@@ -41,6 +41,7 @@ export const createSqlitePlugin = <
     ? sqliteGenTypes({ filename: `${namespace ?? "default"}.sqlite.d.ts` })
     : null;
 
+  const databasePromise = getDatabase();
   return {
     name: "sqliteMiddlewarePlugin",
     middlewares: [
@@ -48,7 +49,7 @@ export const createSqlitePlugin = <
         path: "/",
         middleware: {
           handler: async (_req, ctx) => {
-            ctx.state.db = database;
+            ctx.state.db = await databasePromise;
             const dbQuery = "queryEntries" in ctx.state.db
               ? (ctx.state.db.queryEntries as typeof ctx.state.db.query)
               : ctx.state.db.query;

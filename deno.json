@@ -1,6 +1,6 @@
 {
   "name": "@bureaudouble/outils",
-  "version": "0.0.33",
+  "version": "0.0.38",
   "compilerOptions": {
     "lib": ["es6", "dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
   },
@@ -28,6 +28,8 @@
     "./slugify.ts": "./slugify.ts",
     "./urlcat.ts": "./urlcat.ts",
     "./convertToPlain.ts": "./convertToPlain.ts",
+    "./truncateHtml.ts": "./truncateHtml.ts",
+    "./createVirtualNode.ts": "./createVirtualNode.ts",
     "./deserializeNestedJSON.ts": "./deserializeNestedJSON.ts",
     "./toArray.ts": "./toArray.ts",
     "./fresh/types.ts": "./fresh/types.ts",
