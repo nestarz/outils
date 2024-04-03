@@ -55,7 +55,7 @@ export const sqliteMemorySync = async <DB extends Database>(
 ): Promise<DBWithHash<DB>> => {
   let db0: DB;
   const get = async () => {
-    const buffer = await get_().catch(() => null);
+    const buffer = await get_();
     if (db0) {
       if (/error|info/.test(verbose)) console.log(strPrefix("close"));
       db0.close();

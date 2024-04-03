@@ -1,6 +1,6 @@
 {
   "name": "@bureaudouble/outils",
-  "version": "0.0.41",
+  "version": "0.0.43",
   "compilerOptions": {
     "lib": ["es6", "dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
   },
@@ -19,7 +19,7 @@
     "autoprefixer": "npm:autoprefixer@10.4.17",
     "postcss": "npm:postcss@8.4.33",
     "cssnano": "npm:cssnano@6.0.3",
-    "@bureaudouble/deno-dom": "jsr:@bureaudouble/deno-dom@0.1.38"
+    "@bureaudouble/deno-dom": "jsr:@bureaudouble/deno-dom@0.1.39"
   },
   "exports": {
     "./cn.ts": "./cn.ts",
