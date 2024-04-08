@@ -56,7 +56,7 @@ export const createSqlitePlugin = <
             const qb = new Kysely<Schema>({
               dialect: new SqliteDialect(null!),
             });
-            await sqliteTypes?.save((query) => dbQuery<any>(query));
+            await sqliteTypes?.save((query) => dbQuery<any>(query) as any);
             const key = (namespace ?? "default") as Namespace;
             const value = createQueryFunction(dbQuery, qb, [
               ...(withDeserializeNestedJSON ? [deserializeNestedJSON] : []),
