@@ -1,5 +1,6 @@
 import type { Plugin } from "./types.ts";
 import { join } from "@std/path/join";
+import { getHashSync } from "@bureaudouble/scripted";
 
 type ConfigModule = { default: any; globalCss?: string };
 type Import = (
@@ -38,21 +39,12 @@ export const createTailwindPlugin = async ({
   const update = async () => {
     if (withWritePermission && baseUrl.startsWith("file://")) {
       const importNSA: Import = (arg: string) => import("" + arg);
-      const postcss = (await importNSA("postcss")).default;
-      const cssnano = (await importNSA("cssnano")).default;
-      const autoprefixer = (await importNSA("autoprefixer")).default;
-      const tailwindCss = (await importNSA("tailwindcss")).default;
-      const { getHashSync } = await import("@bureaudouble/scripted");
+      const tailwindBuild: (tailwindConfig: ConfigModule) => Promise<string> =
+        (await importNSA("./tailwindBuild.ts")).default;
       const tailwindConfig = typeof getTailwindConfig === "function"
         ? await getTailwindConfig(importNSA)
         : getTailwindConfig;
-      const newCss = await postcss([
-        tailwindCss(tailwindConfig.default) as any,
-        cssnano(),
-        autoprefixer(),
-      ])
-        .process(tailwindConfig.globalCss ?? "", { from: undefined })
-        .then((v: { css: string }) => v.css);
+      const newCss = await tailwindBuild(tailwindConfig);
       const hash = getHashSync(newCss);
       const filename = getPrefix(`${hash}.css`);
       await Deno.remove(getPrefix(""), { recursive: true }).catch(() => null);
