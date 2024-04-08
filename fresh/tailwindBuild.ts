@@ -5,7 +5,7 @@ import tailwindcss, { type Config } from "tailwindcss";
 
 export default async (
   tailwindConfig: { default: Config; globalCss: string },
-) => {
+): Promise<string> => {
   return await postcss([
     tailwindcss(tailwindConfig.default),
     cssnanoPlugin(),

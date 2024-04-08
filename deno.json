@@ -1,6 +1,6 @@
 {
   "name": "@bureaudouble/outils",
-  "version": "0.0.47",
+  "version": "0.0.48",
   "compilerOptions": {
     "lib": ["es6", "dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
   },
@@ -41,6 +41,7 @@
     "./fresh/composeMiddlewares.ts": "./fresh/composeMiddlewares.ts",
     "./fresh/composeRoutes.ts": "./fresh/composeRoutes.ts",
     "./fresh/createTailwindPlugin.ts": "./fresh/createTailwindPlugin.ts",
+    "./fresh/tailwindBuild.ts": "./fresh/tailwindBuild.ts",
     "./database/generateDatabaseTypes.ts": "./database/generateDatabaseTypes.ts",
     "./database/sqlite/createSqliteFromS3.ts": "./database/sqlite/createSqliteFromS3.ts",
     "./database/sqlite/createQueryFunction.ts": "./database/sqlite/createQueryFunction.ts",
