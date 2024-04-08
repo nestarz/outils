@@ -1,6 +1,6 @@
 {
   "name": "@bureaudouble/outils",
-  "version": "0.0.46",
+  "version": "0.0.47",
   "compilerOptions": {
     "lib": ["es6", "dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
   },

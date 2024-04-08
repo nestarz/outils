@@ -40,7 +40,7 @@ export const createTailwindPlugin = async ({
     if (withWritePermission && baseUrl.startsWith("file://")) {
       const importNSA: Import = (arg: string) => import("" + arg);
       const tailwindBuild: (tailwindConfig: ConfigModule) => Promise<string> =
-        (await importNSA("./tailwindBuild.ts")).default;
+        (await importNSA("jsr:@bureaudouble/outils/fresh/tailwindBuild.ts")).default;
       const tailwindConfig = typeof getTailwindConfig === "function"
         ? await getTailwindConfig(importNSA)
         : getTailwindConfig;
