@@ -1,12 +1,16 @@
 import type { Plugin } from "./types.ts";
-import type { Config } from "tailwindcss";
 import { join } from "@std/path/join";
 
-type ConfigModule = { default: Config; globalCss?: string };
+type ConfigModule = { default: any; globalCss?: string };
+type Import = (
+  arg: string,
+) => ConfigModule | Promise<ConfigModule>;
 interface TailwindPlugin {
   basePath?: string;
   baseUrl: string;
-  tailwindConfig: ConfigModule | (() => ConfigModule | Promise<ConfigModule>);
+  tailwindConfig:
+    | ConfigModule
+    | ((importNSA: Import) => ConfigModule | Promise<ConfigModule>);
   outDirectory?: string;
 }
 
@@ -33,13 +37,14 @@ export const createTailwindPlugin = async ({
 
   const update = async () => {
     if (withWritePermission && baseUrl.startsWith("file://")) {
-      const postcss = (await import("postcss")).default;
-      const cssnano = (await import("cssnano")).default;
-      const autoprefixer = (await import("autoprefixer")).default;
-      const tailwindCss = (await import("tailwindcss")).default;
+      const importNSA: Import = (arg: string) => import("" + arg);
+      const postcss = (await importNSA("postcss")).default;
+      const cssnano = (await importNSA("cssnano")).default;
+      const autoprefixer = (await importNSA("autoprefixer")).default;
+      const tailwindCss = (await importNSA("tailwindcss")).default;
       const { getHashSync } = await import("@bureaudouble/scripted");
       const tailwindConfig = typeof getTailwindConfig === "function"
-        ? await getTailwindConfig()
+        ? await getTailwindConfig(importNSA)
         : getTailwindConfig;
       const newCss = await postcss([
         tailwindCss(tailwindConfig.default) as any,
@@ -47,7 +52,7 @@ export const createTailwindPlugin = async ({
         autoprefixer(),
       ])
         .process(tailwindConfig.globalCss ?? "", { from: undefined })
-        .then((v) => v.css);
+        .then((v: { css: string }) => v.css);
       const hash = getHashSync(newCss);
       const filename = getPrefix(`${hash}.css`);
       await Deno.remove(getPrefix(""), { recursive: true }).catch(() => null);
