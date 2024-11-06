@@ -1,6 +1,6 @@
 {
   "name": "@bureaudouble/outils",
-  "version": "0.0.95",
+  "version": "0.0.96",
   "license": "UNLICENSED",
   "compilerOptions": {
     "lib": ["es6", "dom", "dom.iterable", "dom.asynciterable", "deno.ns"]
@@ -10,21 +10,20 @@
     "@bureaudouble/html-parse-stringify": "jsr:@bureaudouble/html-parse-stringify@0.0.1",
     "@bureaudouble/scripted": "jsr:@bureaudouble/scripted@0.0.2",
     "@fartlabs/rt": "jsr:@fartlabs/rt@^0.0.3",
-    "@preact/signals": "npm:@preact/signals@^1.3.0",
-    "@std/fs/": "jsr:/@std/fs@^1.0.3/",
-    "@std/html/": "jsr:/@std/html@^1.0.3/",
-    "@std/html/entities": "jsr:@std/html@^1.0.3/entities",
-    "@std/path/": "jsr:/@std/path@^1.0.6/",
+    "@preact/signals": "npm:@preact/signals@^2.2.0",
+    "@std/fs/": "jsr:@std/fs@^1.0.5",
+    "@std/html": "jsr:@std/html@^1.0.3",
+    "@std/path": "jsr:@std/path@^1.0.8",
     "autoprefixer": "npm:autoprefixer@^10.4.20",
     "clsx": "npm:clsx@^2.1.1",
     "cssnano": "npm:cssnano@^7.0.6",
     "kysely": "npm:kysely@^0.27.4",
-    "kysely-plugin-serialize": "npm:kysely-plugin-serialize@^0.6.3",
+    "kysely-plugin-serialize": "npm:kysely-plugin-serialize@^0.7.0",
     "mrmime": "npm:mrmime@^2.0.0",
     "postcss": "npm:postcss@^8.4.47",
     "sql-query-identifier": "npm:sql-query-identifier@^2.7.0",
-    "tailwind-merge": "npm:tailwind-merge@^2.5.2",
-    "tailwindcss": "npm:tailwindcss@^3.4.12"
+    "tailwind-merge": "npm:tailwind-merge@^2.5.4",
+    "tailwindcss": "npm:tailwindcss@^3.4.13"
   },
   "exports": {
     "./cn.ts": "./cn.ts",
