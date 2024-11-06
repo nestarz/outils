@@ -54,6 +54,7 @@ export const createSqliteFromS3 = (
   createAcquireLock?: (
     filename: string,
   ) => (<T>(fn: () => T) => Promise<T>) | null,
+  loose?: boolean,
 ): Promise<DBWithHash<Database>> =>
   sqliteMemorySync(
     createDatabase,
@@ -64,6 +65,7 @@ export const createSqliteFromS3 = (
           s3Client
             .getObject(filename)
             .then((r) => r.arrayBuffer())
+            .catch((e) => loose ? null! : Promise.reject(e))
             .finally(() => console.timeEnd(id))
       );
     },

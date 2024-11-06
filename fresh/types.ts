@@ -3,6 +3,7 @@ export interface FreshContext<
   // deno-lint-ignore no-explicit-any
   Data = any,
 > {
+  request: Request;
   remoteAddr: Deno.NetAddr;
   url: URL;
   route: string;
@@ -106,7 +107,7 @@ export interface ResolvedFreshConfig {
   plugins: Plugin[];
   staticDir: string;
   router?: RouterOptions;
-  server: Partial<Deno.ServeTlsOptions>;
+  server: Partial<Deno.ServeOptions>;
   basePath: string;
 }
 
@@ -188,7 +189,8 @@ export type RenderPipe = <JSXElement extends VNode>(options: {
     default: AsyncLayout<any, any>;
   };
   virtualNodePipe: (
-    vn: JSXElement,
+    req: Request,
+    ctx: FreshContext<{ virtualNode: VNode }>,
   ) => Promise<BodyInit | null | undefined | Response>;
 }) => (route: Route) => {
   handler: (req: Request, ctx: FreshContext) => Promise<Response>;

@@ -4,6 +4,7 @@ import type {
   PropHandler,
   RenderPipe,
   RequestHandler,
+  VNode,
 } from "./types.ts";
 
 export const createRenderPipe: RenderPipe = (config) => (route) => ({
@@ -27,7 +28,12 @@ export const createRenderPipe: RenderPipe = (config) => (route) => ({
                     typeof node
                   >) ?? node,
               )
-              .then(config.virtualNodePipe)
+              .then((virtualNode: VNode) =>
+                config.virtualNodePipe(req, {
+                  ...ctx,
+                  state: { ...ctx.state, virtualNode },
+                })
+              )
               .then((result) =>
                 result instanceof Response ? result : new Response(result, {
                   headers: {
@@ -44,7 +50,8 @@ export const createRenderPipe: RenderPipe = (config) => (route) => ({
           (typeof route.handler === "function"
             ? route.handler
             : route.handler?.[req.method as keyof Handlers])?.(req, ctx) ??
-            (req.method === "GET"
+            (req.method === "GET" ||
+                req.headers.get("accept") === "text/x-component"
               ? render?.()
               : new Response(null, { status: 404 })),
       )

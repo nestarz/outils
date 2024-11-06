@@ -3,12 +3,23 @@ import { storeFunctionExecution } from "@bureaudouble/scripted";
 import { join } from "@std/path/join";
 
 export const createHmrPlugin = async (
-  { hmrEventName, basePath, path = "/__hmr" }: {
+  {
+    hmrEventName = "hmr",
+    basePath,
+    path = "/__hmr",
+    mode = "reload",
+    clientHmrEventName = "hmr",
+  }: {
     hmrEventName?: string;
+    clientHmrEventName?: string;
     basePath?: string;
     path: string;
+    mode: "event" | "reload";
   } = {
+    hmrEventName: "hmr",
+    clientHmrEventName: "hmr",
     path: "/__hmr",
+    mode: "reload",
   },
 ): Promise<Plugin> => {
   const withWritePermission: boolean =
@@ -18,7 +29,6 @@ export const createHmrPlugin = async (
   const hmrCallbacks: Map<number, () => void> = new Map();
   globalThis.addEventListener(hmrEventName ?? "hmr", () => {
     [...hmrCallbacks.values()].forEach((fn) => fn());
-    hmrCallbacks.clear();
   });
 
   return {
@@ -29,32 +39,44 @@ export const createHmrPlugin = async (
         middleware: {
           handler: (_req, ctx) => {
             if (withWritePermission) {
-              storeFunctionExecution((path: string) => {
-                let eventSource: EventSource;
-                const connect = () => {
-                  eventSource = new EventSource(path);
-                  eventSource.addEventListener(
-                    "error",
-                    () => eventSource.close(),
-                  );
-                  eventSource.addEventListener(
-                    "message",
-                    () => globalThis.location?.reload(),
-                  );
-                };
-                connect();
-                let reconnecting = false;
-                setInterval(() => {
-                  if (eventSource?.readyState == EventSource.CLOSED) {
-                    reconnecting = true;
-                    console.log("[hmr] reconnecting...");
-                    connect();
-                  } else if (reconnecting) {
-                    reconnecting = false;
-                    console.log("[hmr] reconnected!");
-                  }
-                }, 3000);
-              }, join(basePath ?? "", path));
+              storeFunctionExecution(
+                (
+                  path: string,
+                  mode: "event" | "reload",
+                  eventName: string,
+                ) => {
+                  let eventSource: EventSource;
+                  const connect = () => {
+                    eventSource = new EventSource(path);
+                    eventSource.addEventListener(
+                      "error",
+                      () => eventSource.close(),
+                    );
+                    eventSource.addEventListener(
+                      "message",
+                      () =>
+                        mode === "event"
+                          ? globalThis.dispatchEvent(new CustomEvent(eventName))
+                          : globalThis.location?.reload(),
+                    );
+                  };
+                  connect();
+                  let reconnecting = false;
+                  setInterval(() => {
+                    if (eventSource?.readyState == EventSource.CLOSED) {
+                      reconnecting = true;
+                      console.log("[hmr] reconnecting...");
+                      connect();
+                    } else if (reconnecting) {
+                      reconnecting = false;
+                      console.log("[hmr] reconnected!");
+                    }
+                  }, 3000);
+                },
+                join(basePath ?? "", path),
+                mode,
+                clientHmrEventName ?? "hmr",
+              );
             }
             return ctx.next();
           },

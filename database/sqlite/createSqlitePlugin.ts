@@ -25,6 +25,10 @@ export interface SqliteMiddlewareConfig<Namespace extends string = "default"> {
   disableWritingTypes?: boolean;
 }
 
+const withWriteAccess: boolean = await Deno.permissions
+  .query({ name: "write", path: Deno.cwd() })
+  .then((d) => d.state === "granted");
+
 export const createSqlitePlugin = <
   Schema,
   Namespace extends string = "default",
@@ -37,7 +41,7 @@ export const createSqlitePlugin = <
 }: SqliteMiddlewareConfig<Namespace>): Plugin<
   SqliteMiddlewareState<Schema, Namespace>
 > => {
-  const sqliteTypes = !disableWritingTypes
+  const sqliteTypes = !disableWritingTypes && withWriteAccess
     ? sqliteGenTypes({ filename: `${namespace ?? "default"}.sqlite.d.ts` })
     : null;
 

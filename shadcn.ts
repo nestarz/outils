@@ -1,4 +1,4 @@
-import { walk } from "@std/fs/walk";
+import { walk } from "jsr:/@std/fs@^1.0.0-rc.5/walk";
 
 const regEscape = (str: string) =>
   str.replace(/[/\-\\^$*+?.()|[\]{}]/g, "\\$&");
@@ -35,7 +35,7 @@ const packageLockConfig = await open("package-lock.json");
 const tsconfig = await open("tsconfig.json", shadcnUiConfig);
 
 const cmd = new Deno.Command("npx", {
-  args: ["shadcn-ui@latest", ...Deno.args],
+  args: ["shadcn@latest", ...Deno.args],
   stdout: "piped",
   stderr: "piped",
 });

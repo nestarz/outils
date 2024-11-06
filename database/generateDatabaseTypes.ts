@@ -6,18 +6,39 @@ const snakeToPascal = (input: string): string =>
     .reduce(
       (previous, current) =>
         previous + current.charAt(0).toUpperCase() + current.slice(1),
-      [] as unknown as string
+      [] as unknown as string,
     );
 
 type Column = { column_name: string; data_type: string; is_nullable: boolean };
 
+const s3ObjectStringClues = [
+  "image",
+  "media",
+  "video",
+  "3d",
+  "glb",
+  "mp4",
+  "mp3",
+  "wav",
+  "audio",
+  "svg",
+  "file",
+];
+
 const generateInterface = (name: string, columns: Column[]): string =>
-  `export interface ${snakeToPascal(name)} {\n${columns
-    .map(
-      ({ column_name, is_nullable, data_type }) =>
-        `  ${column_name}${is_nullable ? "?" : ""}: ${data_type};`
-    )
-    .join("\n")}\n}`;
+  `export interface ${snakeToPascal(name)} {\n${
+    columns
+      .map(
+        ({ column_name, is_nullable, data_type }) =>
+          `  ${column_name}${is_nullable ? "?" : ""}: ${
+            column_name.endsWith("_json") &&
+              s3ObjectStringClues.some((v) => column_name.includes(v))
+              ? "S3Object[]"
+              : data_type
+          };`,
+      )
+      .join("\n")
+  }\n}`;
 
 export interface Schema {
   schema_name: string;
@@ -26,14 +47,16 @@ export interface Schema {
 
 export const genTypes = (
   dialectToTypescriptTypes: Record<string, string>,
-  schemas: Schema[]
+  schemas: Schema[],
 ): string => {
-  const tsFileContent = `type JSONValue =
-  | string
-  | number
-  | boolean
-  | { [x: string]: JSONValue }
-  | Array<JSONValue>;`;
+  const tsFileContent = `interface S3Object {
+  type: "Object";
+  key: string;
+  size: number;
+  lastModified: string;
+  "content-type": string;
+  etag: string;
+}`;
 
   const tableInterfaces = schemas
     .flatMap(({ schema_name, tables }) =>
@@ -44,7 +67,7 @@ export const genTypes = (
             column_name,
             data_type: dialectToTypescriptTypes[data_type] ?? "unknown",
             is_nullable,
-          }))
+          })),
         )
       )
     )
@@ -57,7 +80,7 @@ export const genTypes = (
           column_name: table.table_name,
           data_type: snakeToPascal(join(schema.schema_name, table.table_name)),
           is_nullable: false,
-        }))
+        })),
       )
     )
     .join("\n");
@@ -67,7 +90,7 @@ export const genTypes = (
       column_name: schema.schema_name,
       data_type: snakeToPascal(schema.schema_name),
       is_nullable: false,
-    }))
+    })),
   );
 
   return [tsFileContent, tableInterfaces, schemaInterfaces, databaseInterface]
@@ -83,13 +106,17 @@ export interface GenerateDatabaseTypesConfig {
 }
 
 type Fn = (
-  query: string
+  query: string,
 ) => Schema[] | Promise<Schema[] | undefined> | undefined;
 
 export type DatabaseType = {
   get: (fn: Fn) => Promise<string>;
   save: (fn: Fn) => Promise<void>;
 };
+
+const withWriteAccess: boolean = await Deno.permissions
+  .query({ name: "write", path: Deno.cwd() })
+  .then((d) => d.state === "granted");
 
 export const generateDatabaseTypes = ({
   filename = "types.db.d.ts",
@@ -105,11 +132,7 @@ export const generateDatabaseTypes = ({
 
   return {
     get,
-    save: async (fn) => {
-      const withWriteAccess = await Deno.permissions
-        .query({ name: "write", path: Deno.cwd() })
-        .then((d) => d.state === "granted");
-
+    save: (fn) => {
       if (!fetchedTypes && withWriteAccess) {
         fetchedTypes = true;
         get(fn)
@@ -123,6 +146,8 @@ export const generateDatabaseTypes = ({
             console.error(err);
           });
       }
+
+      return Promise.resolve();
     },
   };
 };

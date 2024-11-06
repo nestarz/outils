@@ -1,3 +1,5 @@
+import { identify } from "sql-query-identifier";
+
 type RowObject = { [x: string]: unknown };
 // prettier-ignore
 type QueryParameter =
@@ -13,7 +15,7 @@ type QueryParameterSet = Record<string, QueryParameter> | QueryParameter[];
 
 export type QueryFn = <O extends RowObject = RowObject>(
   sql: string,
-  values?: QueryParameterSet,
+  values?: QueryParameterSet
 ) => Promise<Array<O>>;
 
 export interface DBWithHash<T> {
@@ -22,7 +24,7 @@ export interface DBWithHash<T> {
   query: QueryFn;
 }
 
-const strPrefix = (v: unknown): string => `[s3lite] ${v}`;
+const strPrefix = (k: string, v: unknown): string => `[s3lite:${k}] ${v}`;
 
 export interface Database {
   close(): void;
@@ -30,7 +32,7 @@ export interface Database {
   serialize(): Uint8Array;
   queryEntries<O extends RowObject = RowObject>(
     sql: string,
-    params?: QueryParameterSet,
+    params?: QueryParameterSet
   ): Array<O>;
 }
 
@@ -40,7 +42,7 @@ export type DatabaseCreator<DB extends Database> = (
     mode?: "read" | "write" | "create";
     memory?: boolean;
     uri?: boolean;
-  },
+  }
 ) => DB;
 
 export const sqliteMemorySync = async <DB extends Database>(
@@ -51,17 +53,15 @@ export const sqliteMemorySync = async <DB extends Database>(
   acquireLock?: null | (<T>(fn: () => T) => Promise<T>),
   verbose: "info" | "error" = "info",
   ttl = 1000 * 60 * 5,
-  checkTtl = 1000,
+  checkTtl = 1000
 ): Promise<DBWithHash<DB>> => {
   let db0: DB;
   const get = async () => {
     const buffer = await get_();
     if (db0) {
-      if (/error|info/.test(verbose)) console.log(strPrefix("close"));
       db0.close();
     }
     db0 = createDatabase("", { memory: true });
-    if (/error|info/.test(verbose)) console.log(strPrefix("open"));
     if (buffer) db0.deserialize(new Uint8Array(buffer));
     return db0;
   };
@@ -82,25 +82,33 @@ export const sqliteMemorySync = async <DB extends Database>(
     },
     query: async <O extends RowObject>(
       query: string,
-      values?: QueryParameterSet,
+      values?: QueryParameterSet
     ) => {
+      const statements = (() => {
+        try {
+          return identify(query, { dialect: "sqlite" });
+        } catch (error) {
+          console.error({ error, type: "identify" });
+          return [];
+        }
+      })();
+
       let isMutation = false;
-      if (query.match(/BEGIN/gi)) inTransaction = true;
-      if (query.match(/ROLLBACK/gi) || query.match(/COMMIT/gi)) {
+      if (query.match(/BEGIN/g)) inTransaction = true;
+      if (!query.match(/ROLLBACK/g) || query.match(/COMMIT/g)) {
         inTransaction = false;
       }
       if (!inTransaction) {
-        isMutation = !!query.match(
-          /DELETE|INSERT|UPDATE|CREATE|ALTER|COMMIT|DROP/gi,
-        );
+        isMutation = statements.some((v) => v.executionType === "MODIFICATION");
       }
 
-      const render = isMutation && typeof acquireLock === "function"
-        ? acquireLock
-        : <T>(fn: () => T): T => fn();
+      const render =
+        isMutation && typeof acquireLock === "function"
+          ? acquireLock
+          : <T>(fn: () => T): T => fn();
       return await render(async () => {
         if (/error|info/.test(verbose)) {
-          console.log(strPrefix(query));
+          console.log(strPrefix("query", query));
         }
 
         const renewLease: () => Promise<void> = async () => {
@@ -123,16 +131,13 @@ export const sqliteMemorySync = async <DB extends Database>(
           .then(() => db?.queryEntries<O>(query, values) ?? [])
           .then(async (res) => {
             if (isMutation) {
-              if (/error|info/.test(verbose)) {
-                console.log(strPrefix("saving..."));
-              }
               if (db) await set(db.serialize());
             }
             return res;
           })
           .catch((error) => {
             console.error(error);
-            throw Error(strPrefix(JSON.stringify(error)));
+            throw Error(strPrefix("error", JSON.stringify(error)));
           });
       });
     },

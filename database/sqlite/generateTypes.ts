@@ -27,7 +27,7 @@ FROM
                 json_object(
                     'column_name', p.name,
                     'data_type', p.type, 
-                    'is_nullable', CASE WHEN p."notnull" = 1 THEN 'false' ELSE 'true' END
+                    'is_nullable', CASE WHEN p."notnull" = 1 OR p."pk" = 1 THEN false ELSE true END
                 )
             ) as columns
         FROM 
@@ -47,13 +47,12 @@ export const generateSqliteTypes = (
     ...props
   }: Partial<GenerateDatabaseTypesConfig> = {
     filename: "types.sqlite.d.ts",
-  }
+  },
 ): DatabaseType =>
   generateDatabaseTypes({
     filename,
     ...props,
-    getRows:
-      props.getRows ??
+    getRows: props.getRows ??
       (((v: any) =>
         v.map((schema: any) => ({
           ...schema,

@@ -53,17 +53,18 @@ export const defaultRenderer = (route: Route): MiddlewareModule => ({
 });
 
 export const initFreshContext = (
-  req: Request,
+  request: Request,
   connInfo: Deno.ServeHandlerInfo,
   params: Record<string, string>,
   route: Route,
 ): FreshContext => {
-  const url = new URL(req.url);
+  const url = new URL(request.url);
   return {
+    request,
     url,
     params,
     route: route.pattern,
-    remoteAddr: connInfo.remoteAddr,
+    remoteAddr: connInfo.remoteAddr as any,
     state: {},
     render: () => new Response(null, { status: 404 }),
     // deno-lint-ignore no-explicit-any
