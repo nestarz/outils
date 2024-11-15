@@ -13,41 +13,66 @@ type Parse = (arg: string) => Node[];
 
 // List of inline elements that shouldn't add spaces
 const inlineElements = new Set([
-  'span', 'a', 'strong', 'em', 'b', 'i', 'u', 'small', 'sub', 'sup',
-  'mark', 'del', 'ins', 'code', 'kbd', 'samp', 'var', 'time', 'cite',
-  'dfn', 'abbr', 'data', 'q', 'label'
+  "span",
+  "a",
+  "strong",
+  "em",
+  "b",
+  "i",
+  "u",
+  "small",
+  "sub",
+  "sup",
+  "mark",
+  "del",
+  "ins",
+  "code",
+  "kbd",
+  "samp",
+  "var",
+  "time",
+  "cite",
+  "dfn",
+  "abbr",
+  "data",
+  "q",
+  "label",
 ]);
 
 const extractContent = (node: Node, isLastNode: boolean = false): string => {
   if (node.type === "text") {
     return node.content ?? "";
   }
-  
+
   if (node.type === "tag") {
     if (node.voidElement) {
-      return "";
+      return " ";
     }
-    
-    const content = node.children?.map((child, index) => 
-      extractContent(child, index === (node.children?.length ?? 0) - 1)
-    ).join("") ?? "";
-    
+
+    const content =
+      node.children
+        ?.map((child, index) =>
+          extractContent(child, index === (node.children?.length ?? 0) - 1)
+        )
+        .join("") ?? "";
+
     if (!isLastNode && node.name && !inlineElements.has(node.name)) {
       return content + " ";
     }
-    
+
     return content;
   }
-  
+
   return "";
 };
 
 export const convertToPlain = (obj: any): string | null => {
-  const innerHTML = typeof obj === "string"
-    ? obj
-    : String(obj).length > 0
-    ? JSON.stringify(obj)
-    : null;
+  const innerHTML =
+    typeof obj === "string"
+      ? obj
+      : String(obj).length > 0
+      ? JSON.stringify(obj)
+      : null;
 
   if (typeof innerHTML === "string" && innerHTML?.trim()) {
     if (globalThis.document) {
@@ -57,9 +82,11 @@ export const convertToPlain = (obj: any): string | null => {
     } else {
       const parsedHtml = (parse as Parse)(innerHTML);
       return unescape!(
-        parsedHtml.map((node, index) => 
-          extractContent(node, index === parsedHtml.length - 1)
-        ).join("")
+        parsedHtml
+          .map((node, index) =>
+            extractContent(node, index === parsedHtml.length - 1)
+          )
+          .join("")
       ).trim();
     }
   }
